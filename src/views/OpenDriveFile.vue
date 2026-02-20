@@ -83,20 +83,11 @@ import {
   ToolbarMenuId,
   Viewer2dToolbarPlugin
 } from '@x-viewer/plugins'
-import { onMounted, onUnmounted, ref, watch, nextTick, computed } from 'vue'
+import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 
 import GoogleDriveAuth from '../components/GoogleDriveAuth.vue'
 import { useGoogleDrive } from '../composables/useGoogleDrive'
-
-interface DriveFile {
-  id: string
-  name: string
-  size: string
-  lastEditedUtc: string
-  mimeType: string
-  url: string
-}
 
 const route = useRoute()
 
@@ -105,7 +96,6 @@ const {
   isLoading,
   currentFile,
   getFileContent,
-  authenticate,
   handleDriveAppAction
 } = useGoogleDrive()
 
