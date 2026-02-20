@@ -1,7 +1,7 @@
 <template>
   <div class="local-file-view">
     <div class="app-header">
-      <h1>Local DWG/DXF Viewer</h1>
+      <h1>DWG Viewer</h1>
       <div class="header-actions">
         <router-link to="/" class="header-link">
           <el-button type="primary" text>

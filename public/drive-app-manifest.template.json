@@ -42,7 +42,7 @@
   "api_console_project_id": "YOUR_PROJECT_ID",
   "app": {
     "launch": {
-      "web_url": "https://drive.thingraph.site/"
+      "web_url": "https://drive.thingraph.site/open"
     }
   }
 }

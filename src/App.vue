@@ -62,7 +62,8 @@
 }
 
 .app-main > .home-view,
-.app-main > .local-file-view {
+.app-main > .local-file-view,
+.app-main > .open-drive-file-view {
   flex: 1;
   overflow: hidden;
 }

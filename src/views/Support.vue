@@ -14,7 +14,7 @@
 
     <div class="support-content">
       <p class="intro">
-        Welcome to the <strong>DWG Viewer for Google Drive™</strong> support page. Here you'll find answers to common
+        Welcome to the <strong>DWG Viewer</strong> support page. Here you'll find answers to common
         questions, usage guides, and troubleshooting tips. If you need additional help, please don't hesitate to
         <a href="mailto:thingraph@outlook.com">contact us</a>.
       </p>

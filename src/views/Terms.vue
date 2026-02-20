@@ -15,7 +15,7 @@
     <div class="terms-content">
       <p class="intro">
         These Terms of Service (“Terms”) govern your access to and use of
-        <strong>DWG Viewer for Google Drive™</strong> ("the Service"). By using the Service, you agree to these Terms
+        <strong>DWG Viewer</strong> ("the Service"). By using the Service, you agree to these Terms
         and acknowledge having read our <router-link to="/privacy">Privacy Policy</router-link>. If you do not agree,
         please do not use the Service.
       </p>
@@ -23,7 +23,7 @@
       <section>
         <h2>1. Definitions</h2>
         <p>
-          <strong>"Service"</strong> means the DWG Viewer for Google Drive™ application that allows you to view DWG and
+          <strong>"Service"</strong> means the DWG Viewer application that allows you to view DWG and
           DXF files from your Google Drive™. <strong>"You"</strong> and <strong>"Your"</strong> refer to the person or
           entity using the Service. <strong>“We”</strong>, <strong>“Us”</strong>, and <strong>“Our”</strong> refer to the
           provider of the Service.

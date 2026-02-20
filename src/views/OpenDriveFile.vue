@@ -45,8 +45,8 @@
               <GoogleDriveAuth />
             </div>
 
-            <div class="picker-section">
-              <GoogleDriveFilePicker @file-selected="handleFileSelected" enable-file-picker="isAuthenticated" />
+            <div v-if="parsedFileId" class="file-id-section">
+              <div class="file-id-label">File ID: {{ parsedFileId }}</div>
             </div>
           </div>
 
@@ -60,7 +60,7 @@
             </div>
 
             <div v-else class="welcome-message">
-              <el-empty description="Select a DWG/DXF file from Google Drive™ to view it" />
+              <el-empty description="Opening file from Google Drive™..." />
             </div>
           </div>
         </div>
@@ -83,11 +83,10 @@ import {
   ToolbarMenuId,
   Viewer2dToolbarPlugin
 } from '@x-viewer/plugins'
-import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref, watch, nextTick, computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import GoogleDriveAuth from '../components/GoogleDriveAuth.vue'
-import GoogleDriveFilePicker from '../components/GoogleDriveFilePicker.vue'
 import { useGoogleDrive } from '../composables/useGoogleDrive'
 
 interface DriveFile {
@@ -110,12 +109,12 @@ const {
   handleDriveAppAction
 } = useGoogleDrive()
 
-const selectedFile = ref<DriveFile | null>(null)
 const fileUrl = ref<string>('')
 const viewerContainer = ref<HTMLElement | null>(null)
 const viewer = ref<Viewer2d | null>(null)
 const layerManagerPlugin = ref<LayerManagerPlugin | null>(null)
 const fileLoadError = ref<string>('')
+const parsedFileId = ref<string>('')
 
 const cleanupBlobUrl = () => {
   if (fileUrl.value && fileUrl.value.startsWith('blob:')) {
@@ -139,7 +138,12 @@ const loadFileAsBlob = async (fileId: string) => {
     fileUrl.value = blobUrl
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch file'
-    fileLoadError.value = `Error getting file content: ${errorMessage}`
+    // Show user-friendly message when 404 is due to drive.file scope (Picker vs Open with)
+    if (errorMessage.includes('FILE_OPEN_WITH_REQUIRED')) {
+      fileLoadError.value = errorMessage.replace('FILE_OPEN_WITH_REQUIRED:', '').trim()
+    } else {
+      fileLoadError.value = `Error getting file content: ${errorMessage}`
+    }
   }
 }
 
@@ -195,7 +199,7 @@ const initViewer = async () => {
 
     try {
       const modelCfg = {
-        modelId: currentFile.value?.name || selectedFile.value?.name || 'model_1',
+        modelId: currentFile.value?.name || 'model_1',
         src: fileUrl.value,
         merge: true,
       } as Model2dConfig
@@ -211,20 +215,11 @@ const initViewer = async () => {
 }
 
 watch([fileUrl, viewerContainer], async ([url, container]) => {
-  if (url && container && (currentFile.value || selectedFile.value)) {
+  if (url && container && currentFile.value) {
     await nextTick()
     await initViewer()
   }
 }, { immediate: true })
-
-const handleFileSelected = async (file: DriveFile) => {
-  fileLoadError.value = ''
-  selectedFile.value = file
-  cleanupBlobUrl()
-  fileUrl.value = ''
-  cleanupViewer()
-  await loadFileAsBlob(file.id)
-}
 
 watch(currentFile, async (file) => {
   if (file) {
@@ -236,29 +231,88 @@ watch(currentFile, async (file) => {
   }
 }, { immediate: true })
 
-onMounted(async () => {
-  // Check if URL has fileId parameter (from Google Drive App)
-  const fileId = route.query.fileId as string
-  const fileName = route.query.fileName as string
-  const mimeType = route.query.mimeType as string
+// Store fileId and file loading state
+const pendingFileId = ref<string | null>(null)
+const fileLoadAttempted = ref(false)
 
-  if (fileId) {
+// Watch for authentication completion, then load file
+watch(isAuthenticated, async (authenticated) => {
+  // Only load file if authenticated and we have a pending fileId and haven't attempted loading yet
+  if (authenticated && pendingFileId.value && !fileLoadAttempted.value) {
+    fileLoadAttempted.value = true
     try {
-      // If user is not authenticated, authenticate first
-      if (!isAuthenticated.value) {
-        await authenticate()
-        // Wait for authentication to complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-
-      // Handle the Drive App action to load the file
       await handleDriveAppAction({
-        fileId,
-        fileName: fileName || '',
-        mimeType: mimeType || ''
+        fileId: pendingFileId.value,
+        fileName: '',
+        mimeType: ''
       })
     } catch (error) {
-      console.error('Error loading file from URL:', error)
+      console.error('Error loading file from Google Drive:', error)
+      fileLoadError.value = error instanceof Error ? error.message : 'Failed to load file from Google Drive.'
+    }
+  }
+}, { immediate: true })
+
+onMounted(async () => {
+  // Parse state parameter from Google Drive "Open with" action
+  // Google encodes the state parameter, so we need to decode it first
+  // E.g., raw url: http://localhost:5173/open?state={"ids":["xxx"]}
+  // Encoded: http://localhost:5173/open?state=%7B%22ids%22%3A%5B%22xxx%22%5D%7D
+  const stateParam = route.query.state
+  if (!stateParam || typeof stateParam !== 'string') {
+    fileLoadError.value = 'Missing or invalid state parameter from Google Drive.'
+    return
+  }
+
+  // Decode URL-encoded state parameter before parsing
+  let decodedState: string
+  try {
+    decodedState = decodeURIComponent(stateParam)
+  } catch (error) {
+    fileLoadError.value = `Failed to decode state parameter from Google Drive. Error: ${error}`
+    return
+  }
+
+  // Parse as JSON (format: {"ids":["xxx"]})
+  let state: any = null
+  try {
+    state = JSON.parse(decodedState)
+  } catch (error) {
+    fileLoadError.value = `Invalid state format from Google Drive. Expected format: {"ids":["xxx"]}. Error: ${error}`
+    return
+  }
+
+  // Extract fileId from ids array
+  let fileId: string | null = null
+  if (state && state.ids && Array.isArray(state.ids) && state.ids.length > 0) {
+    fileId = state.ids[0] // Get the first file ID from ids array
+  } else {
+    fileLoadError.value = 'No file ID found in state parameter. Expected format: {"ids":["xxx"]}'
+    return
+  }
+
+  if (!fileId) {
+    fileLoadError.value = 'No file ID available.'
+    return
+  }
+
+  // Store parsed fileId for display
+  parsedFileId.value = fileId
+  pendingFileId.value = fileId
+
+  // If already authenticated, trigger file load immediately
+  // Otherwise, wait for watch to trigger when authentication completes
+  if (isAuthenticated.value && !fileLoadAttempted.value) {
+    fileLoadAttempted.value = true
+    try {
+      await handleDriveAppAction({
+        fileId,
+        fileName: '',
+        mimeType: ''
+      })
+    } catch (error) {
+      console.error('Error loading file from Google Drive:', error)
+      fileLoadError.value = error instanceof Error ? error.message : 'Failed to load file from Google Drive.'
     }
   }
 })
@@ -438,10 +492,19 @@ onUnmounted(() => {
   border-bottom: 1px solid #e4e7ed;
 }
 
-.picker-section {
-  display: flex;
-  flex-direction: column;
+.file-id-section {
   flex-shrink: 0;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.file-id-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #606266;
+  font-family: monospace;
+  word-break: break-all;
 }
 
 .viewer-main {
@@ -451,7 +514,6 @@ onUnmounted(() => {
   overflow: hidden;
   min-width: 0;
 }
-
 
 .cad-viewer {
   flex: 1;
@@ -463,6 +525,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
 }
+
 
 .welcome-message {
   flex: 1;

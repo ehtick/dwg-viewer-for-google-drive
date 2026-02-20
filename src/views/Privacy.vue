@@ -15,7 +15,7 @@
     <div class="privacy-content">
       <p class="intro">
         This Privacy Policy explains how we collect, use, and protect information when you use
-        <strong>DWG Viewer for Google Drive™</strong> ("the Service"). By using the Service, you agree to this policy.
+        <strong>DWG Viewer</strong> ("the Service"). By using the Service, you agree to this policy.
       </p>
 
       <section>
