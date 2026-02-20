@@ -73,8 +73,8 @@
         <div class="faq-item">
           <h3>What permissions does the app request?</h3>
           <p>
-            The app requests access to your Google Drive™ files (<code>drive.file</code> scope). This allows
-            the app to read files you select via the Google Drive™ file picker or open directly from Google Drive™. The app
+            The app requests access to your Google Drive™ files (<code>drive.file</code> scope) and permission to connect to your Drive (<code>drive.install</code>). This allows
+            the app to read files you select via the Google Drive™ file picker or open directly from Google Drive™ (e.g. “Open with”). The app
             has read-only access and cannot modify or delete your files.
           </p>
         </div>

@@ -31,7 +31,8 @@
           </li>
           <li>
             <strong>Drive file access:</strong> We request permission (<code>drive.file</code> scope) to read
-            file metadata and file content from your Google Drive™. File content is loaded in your browser and is not sent
+            file metadata and file content from your Google Drive™. We also request <code>drive.install</code> so the app
+            can connect to your Google Drive™ (e.g. appear in “Open with” for files). File content is loaded in your browser and is not sent
             to our servers for storage. The app cannot modify or delete your files.
           </li>
           <li>

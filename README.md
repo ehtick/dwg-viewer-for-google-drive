@@ -62,6 +62,7 @@ pnpm install
    - Configure the consent screen
    - Add scopes:
      - `https://www.googleapis.com/auth/drive.file`
+     - `https://www.googleapis.com/auth/drive.install`
 
 ## Development
 
@@ -110,8 +111,9 @@ pnpm preview
 
 The application requests the following Google Drive™ permissions:
 - `https://www.googleapis.com/auth/drive.file` - Access to files in Google Drive™ that the user has selected or opened
+- `https://www.googleapis.com/auth/drive.install` - Connect the app to your Google Drive™ (e.g. for “Open with” integration)
 
-**Note**: The application uses `drive.file` scope, which allows access to files in the user's Google Drive™ that have been selected via the Google Drive™ Picker or opened directly from Google Drive™. Users authenticate once and can then access files through the Google Drive™ Picker or via direct file links.
+**Note**: The application uses `drive.file` scope for file access and `drive.install` so it can be used from Google Drive™ (e.g. “Open with”). Users authenticate once and can then access files through the Google Drive™ Picker or via direct file links.
 
 ## Google Drive™ App Integration
 
@@ -125,7 +127,7 @@ This application can be registered as a Google Drive™ App to handle CAD files 
 
 - All authentication is handled securely through Google's OAuth 2.0 flow
 - API credentials are stored as environment variables
-- The application uses `drive.file` scope for access to Google Drive™ files that the user has selected or opened
+- The application uses `drive.file` and `drive.install` scopes for access to Google Drive™ and “Open with” integration
 - No file data is stored locally or transmitted to third-party servers
 
 ## Contributing
