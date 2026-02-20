@@ -251,9 +251,10 @@ export function useGoogleDrive() {
 
     try {
       const token = gapi.client.getToken()
-      if (!token) {
+      if (!token || !token.access_token) {
         throw new Error('No access token available')
       }
+      // console.log('token.access_token:', token.access_token)
 
       // Use fetch API to get binary file content with authentication
       const response = await fetch(
@@ -295,6 +296,7 @@ export function useGoogleDrive() {
     if (!token || !token.access_token) {
       throw new Error('No access token available. Please authenticate first.')
     }
+    // console.log('token.access_token:', token.access_token)
 
     return new Promise((resolve, reject) => {
       // Load the Picker API if not already loaded
