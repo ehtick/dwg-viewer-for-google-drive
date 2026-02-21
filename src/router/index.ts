@@ -9,8 +9,9 @@ import Support from '../views/Support.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', name: 'Home', component: Home },
+    { path: '/', redirect: '/open' },
     { path: '/open', name: 'OpenDriveFile', component: OpenDriveFile },
+    { path: '/home', name: 'Home', component: Home },
     { path: '/privacy', name: 'Privacy', component: Privacy },
     { path: '/terms', name: 'Terms', component: Terms },
     { path: '/local-file', name: 'LocalFile', component: LocalFile },
