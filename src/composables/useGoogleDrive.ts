@@ -208,15 +208,16 @@ export function useGoogleDrive() {
     try {
       const response = await gapi.client.drive.files.get({
         fileId: fileId,
-        fields: 'id,name,size,lastEditedUtc,mimeType'
+        fields: 'id,name,size,modifiedTime,mimeType'
       })
 
+      const result = response.result as { id?: string; name?: string; size?: string; modifiedTime?: string; mimeType?: string }
       return {
-        id: response.result.id!,
-        name: response.result.name!,
-        size: response.result.size || '0',
-        lastEditedUtc: response.result.lastEditedUtc!,
-        mimeType: response.result.mimeType!,
+        id: result.id!,
+        name: result.name!,
+        size: result.size || '0',
+        lastEditedUtc: result.modifiedTime || '',
+        mimeType: result.mimeType!,
         url: ''
       }
     } catch (error) {

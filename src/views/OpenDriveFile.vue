@@ -15,13 +15,11 @@
 
     <div class="app-content">
       <div class="standard-mode">
-        <!-- Loading indicator below header, centered -->
         <div v-if="isLoading" class="loading-indicator">
           <el-icon class="loading-icon" size="24"><Loading /></el-icon>
           <span>Loading...</span>
         </div>
 
-        <!-- Error indicator below header, centered -->
         <div v-if="fileLoadError" class="error-indicator">
           <el-icon class="error-icon" size="24"><Warning /></el-icon>
           <span>{{ fileLoadError }}</span>
@@ -29,7 +27,6 @@
 
         <div class="viewer-container">
           <div class="sidebar">
-            <!-- App purpose - required for OAuth verification: homepage must explain purpose -->
             <div class="app-purpose-section">
               <h2 class="purpose-title">About this application</h2>
               <p class="purpose-text">
@@ -40,13 +37,23 @@
               </p>
             </div>
 
-            <!-- Google Drive Auth - always shown at top -->
-            <div class="auth-section">
-              <GoogleDriveAuth />
-            </div>
-
-            <div v-if="parsedFileId" class="file-id-section">
-              <div class="file-id-label">File ID: {{ parsedFileId }}</div>
+            <div v-if="currentFile || routeFileId" class="file-info-wrapper">
+              <el-card class="file-info-card">
+                <template #header>
+                  <div class="card-header">
+                    <el-icon><Document /></el-icon>
+                    <span>File info</span>
+                  </div>
+                </template>
+                <div class="file-info-content">
+                  <div v-if="currentFile?.name" class="file-info-row" :title="currentFile?.id || routeFileId || undefined">
+                    <span class="file-info-label">name</span><span class="file-info-value">{{ currentFile.name }}</span>
+                  </div>
+                  <div v-if="currentFile?.size" class="file-info-row"><span class="file-info-label">size</span><span class="file-info-value">{{ formatFileSize(currentFile.size) }}</span></div>
+                  <div v-if="currentFile?.mimeType" class="file-info-row"><span class="file-info-label">mimeType</span><span class="file-info-value">{{ currentFile.mimeType }}</span></div>
+                  <div v-if="currentFile?.lastEditedUtc" class="file-info-row"><span class="file-info-label">lastEditedUtc</span><span class="file-info-value">{{ currentFile.lastEditedUtc }}</span></div>
+                </div>
+              </el-card>
             </div>
           </div>
 
@@ -70,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { Loading, Warning } from '@element-plus/icons-vue'
+import { Document, Loading, Warning } from '@element-plus/icons-vue'
 import { Model2dConfig, Viewer2d, Viewer2dConfig } from '@x-viewer/core'
 import {
   AxisGizmoPlugin,
@@ -83,10 +90,9 @@ import {
   ToolbarMenuId,
   Viewer2dToolbarPlugin
 } from '@x-viewer/plugins'
-import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 
-import GoogleDriveAuth from '../components/GoogleDriveAuth.vue'
 import { useGoogleDrive } from '../composables/useGoogleDrive'
 
 const route = useRoute()
@@ -96,6 +102,7 @@ const {
   isLoading,
   currentFile,
   getFileContent,
+  authenticate,
   handleDriveAppAction
 } = useGoogleDrive()
 
@@ -104,7 +111,38 @@ const viewerContainer = ref<HTMLElement | null>(null)
 const viewer = ref<Viewer2d | null>(null)
 const layerManagerPlugin = ref<LayerManagerPlugin | null>(null)
 const fileLoadError = ref<string>('')
-const parsedFileId = ref<string>('')
+
+// Parse fileId from route.query.state (format: {"ids":["xxx"]})
+const routeFileId = computed(() => {
+  const stateParam = route.query.state
+  if (!stateParam || typeof stateParam !== 'string') return null
+  try {
+    const decoded = decodeURIComponent(stateParam)
+    const state = JSON.parse(decoded)
+    if (state?.ids?.[0]) return state.ids[0]
+  } catch {
+    try {
+      const state = JSON.parse(stateParam)
+      if (state?.ids?.[0]) return state.ids[0]
+    } catch {
+      // ignore
+    }
+  }
+  return null
+})
+
+const formatFileSize = (sizeStr: string) => {
+  const bytes = parseInt(sizeStr, 10)
+  if (Number.isNaN(bytes)) {
+    return sizeStr
+  }
+  const kb = bytes / 1024
+  if (kb >= 1024) {
+    const mb = kb / 1024
+    return `${mb.toFixed(2)} MB`
+  }
+  return `${kb.toFixed(2)} KB`
+}
 
 const cleanupBlobUrl = () => {
   if (fileUrl.value && fileUrl.value.startsWith('blob:')) {
@@ -128,12 +166,9 @@ const loadFileAsBlob = async (fileId: string) => {
     fileUrl.value = blobUrl
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch file'
-    // Show user-friendly message when 404 is due to drive.file scope (Picker vs Open with)
-    if (errorMessage.includes('FILE_OPEN_WITH_REQUIRED')) {
-      fileLoadError.value = errorMessage.replace('FILE_OPEN_WITH_REQUIRED:', '').trim()
-    } else {
-      fileLoadError.value = `Error getting file content: ${errorMessage}`
-    }
+    fileLoadError.value = errorMessage.includes('FILE_OPEN_WITH_REQUIRED')
+      ? 'This file must be opened via "Open with" in Google Drive™ to view with current permissions.'
+      : `Error getting file content: ${errorMessage}`
   }
 }
 
@@ -221,18 +256,15 @@ watch(currentFile, async (file) => {
   }
 }, { immediate: true })
 
-// Store fileId and file loading state
-const pendingFileId = ref<string | null>(null)
 const fileLoadAttempted = ref(false)
 
-// Watch for authentication completion, then load file
 watch(isAuthenticated, async (authenticated) => {
-  // Only load file if authenticated and we have a pending fileId and haven't attempted loading yet
-  if (authenticated && pendingFileId.value && !fileLoadAttempted.value) {
+  const fileId = routeFileId.value
+  if (authenticated && fileId && !fileLoadAttempted.value) {
     fileLoadAttempted.value = true
     try {
       await handleDriveAppAction({
-        fileId: pendingFileId.value,
+        fileId,
         fileName: '',
         mimeType: ''
       })
@@ -244,54 +276,12 @@ watch(isAuthenticated, async (authenticated) => {
 }, { immediate: true })
 
 onMounted(async () => {
-  // Parse state parameter from Google Drive "Open with" action
-  // Google encodes the state parameter, so we need to decode it first
-  // E.g., raw url: http://localhost:5173/open?state={"ids":["xxx"]}
-  // Encoded: http://localhost:5173/open?state=%7B%22ids%22%3A%5B%22xxx%22%5D%7D
-  const stateParam = route.query.state
-  if (!stateParam || typeof stateParam !== 'string') {
-    fileLoadError.value = 'Missing or invalid state parameter from Google Drive.'
-    return
-  }
-
-  // Decode URL-encoded state parameter before parsing
-  let decodedState: string
-  try {
-    decodedState = decodeURIComponent(stateParam)
-  } catch (error) {
-    fileLoadError.value = `Failed to decode state parameter from Google Drive. Error: ${error}`
-    return
-  }
-
-  // Parse as JSON (format: {"ids":["xxx"]})
-  let state: any = null
-  try {
-    state = JSON.parse(decodedState)
-  } catch (error) {
-    fileLoadError.value = `Invalid state format from Google Drive. Expected format: {"ids":["xxx"]}. Error: ${error}`
-    return
-  }
-
-  // Extract fileId from ids array
-  let fileId: string | null = null
-  if (state && state.ids && Array.isArray(state.ids) && state.ids.length > 0) {
-    fileId = state.ids[0] // Get the first file ID from ids array
-  } else {
-    fileLoadError.value = 'No file ID found in state parameter. Expected format: {"ids":["xxx"]}'
-    return
-  }
-
+  const fileId = routeFileId.value
   if (!fileId) {
-    fileLoadError.value = 'No file ID available.'
+    fileLoadError.value = 'Missing or invalid state parameter from Google Drive. Expected format: {"ids":["xxx"]}'
     return
   }
 
-  // Store parsed fileId for display
-  parsedFileId.value = fileId
-  pendingFileId.value = fileId
-
-  // If already authenticated, trigger file load immediately
-  // Otherwise, wait for watch to trigger when authentication completes
   if (isAuthenticated.value && !fileLoadAttempted.value) {
     fileLoadAttempted.value = true
     try {
@@ -304,6 +294,16 @@ onMounted(async () => {
       console.error('Error loading file from Google Drive:', error)
       fileLoadError.value = error instanceof Error ? error.message : 'Failed to load file from Google Drive.'
     }
+    return
+  }
+
+  let retries = 0
+  while (!isAuthenticated.value && retries < 15) {
+    await new Promise(resolve => setTimeout(resolve, 200))
+    retries++
+  }
+  if (!isAuthenticated.value) {
+    await authenticate()
   }
 })
 
@@ -413,7 +413,7 @@ onUnmounted(() => {
   justify-content: center;
   gap: 12px;
   padding: 20px;
-  font-size: 16px;
+  font-size: 14px;
   color: #F56C6C;
   z-index: 100;
   pointer-events: none;
@@ -433,7 +433,7 @@ onUnmounted(() => {
   width: 100%;
   background: white;
   padding-right: 2px;
-  border-radius: 0px;
+  border-radius: 0;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   margin: 0;
@@ -477,24 +477,61 @@ onUnmounted(() => {
   margin-bottom: 0;
 }
 
-.auth-section {
+.file-info-wrapper {
   flex-shrink: 0;
+}
+
+.file-info-card {
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  border: none;
   border-bottom: 1px solid #e4e7ed;
 }
 
-.file-id-section {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  background: #fff;
+.file-info-card :deep(.el-card__header) {
+  padding: 12px 20px;
   border-bottom: 1px solid #e4e7ed;
 }
 
-.file-id-label {
-  font-size: 12px;
+.file-info-card :deep(.el-card__body) {
+  padding: 12px 20px 20px 20px;
+  flex-shrink: 0;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.file-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.file-info-row {
+  display: flex;
+  gap: 8px;
+  word-break: break-all;
+}
+
+.file-info-label {
+  flex-shrink: 0;
   font-weight: 600;
   color: #606266;
-  font-family: monospace;
-  word-break: break-all;
+  min-width: 5em;
+}
+
+.file-info-value {
+  color: #303133;
+  min-width: 0;
 }
 
 .viewer-main {
@@ -515,7 +552,6 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
 }
-
 
 .welcome-message {
   flex: 1;
