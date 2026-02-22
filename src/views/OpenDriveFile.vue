@@ -115,7 +115,9 @@ const fileLoadError = ref<string>('')
 // Parse fileId from route.query.state (format: {"ids":["xxx"]})
 const routeFileId = computed(() => {
   const stateParam = route.query.state
-  if (!stateParam || typeof stateParam !== 'string') return null
+  if (!stateParam || typeof stateParam !== 'string') {
+    return null
+  }
   try {
     const decoded = decodeURIComponent(stateParam)
     const state = JSON.parse(decoded)
@@ -265,44 +267,32 @@ watch(currentFile, async (file) => {
   }
 }, { immediate: true })
 
-const fileLoadAttempted = ref(false)
 
-watch(isAuthenticated, async (authenticated) => {
-  const fileId = routeFileId.value
-  if (authenticated && fileId && !fileLoadAttempted.value) {
-    fileLoadAttempted.value = true
-    try {
-      await handleDriveAppAction({
-        fileId,
-        fileName: '',
-        mimeType: ''
-      })
-    } catch (error) {
-      console.error('Error loading file from Google Drive:', error)
-      fileLoadError.value = error instanceof Error ? error.message : 'Failed to load file from Google Drive.'
-    }
-  }
-}, { immediate: true })
-
-onMounted(async () => {
+const tryLoadFileFromDrive = async () => {
   const fileId = routeFileId.value
   if (!fileId) {
     fileLoadError.value = 'Missing or invalid state parameter from Google Drive. Expected format: {"ids":["xxx"]}'
     return
   }
+  try {
+    await handleDriveAppAction({
+      fileId,
+      fileName: '',
+      mimeType: ''
+    })
+  } catch (error) {
+    console.error('Error loading file from Google Drive:', error)
+    fileLoadError.value = error instanceof Error ? error.message : 'Failed to load file from Google Drive.'
+  }
+}
 
-  if (isAuthenticated.value && !fileLoadAttempted.value) {
-    fileLoadAttempted.value = true
-    try {
-      await handleDriveAppAction({
-        fileId,
-        fileName: '',
-        mimeType: ''
-      })
-    } catch (error) {
-      console.error('Error loading file from Google Drive:', error)
-      fileLoadError.value = error instanceof Error ? error.message : 'Failed to load file from Google Drive.'
-    }
+watch(isAuthenticated, async (authenticated) => {
+  await tryLoadFileFromDrive()
+}, { immediate: true })
+
+onMounted(async () => {
+  if (isAuthenticated.value) {
+    await tryLoadFileFromDrive()
     return
   }
 
