@@ -173,14 +173,19 @@ export function useGoogleDrive() {
       // Ensure APIs are initialized first
       await initializeGoogleAPIs()
 
-      // Authenticate if needed
+      // Authenticate if needed, and wait until user has actually completed login
       if (!isAuthenticated.value) {
         await authenticate()
-        // Wait for authentication to complete and token to be set
+        // Wait for user to complete sign-in (token callback sets isAuthenticated)
         let retries = 0
-        while (!gapi.client.getToken() && retries < 10) {
-          await new Promise(resolve => setTimeout(resolve, 200))
+        const maxWait = 120 // ~2 minutes
+        while (!isAuthenticated.value && retries < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
           retries++
+        }
+        if (!isAuthenticated.value) {
+          console.warn('Authentication not completed, skipping file load')
+          return
         }
       }
 

@@ -15,9 +15,9 @@
 
     <div class="app-content">
       <div class="standard-mode">
-        <div v-if="isLoading" class="loading-indicator">
+        <div v-if="loadingMessage" class="loading-indicator">
           <el-icon class="loading-icon" size="24"><Loading /></el-icon>
-          <span>Loading...</span>
+          <span>{{ loadingMessage }}</span>
         </div>
 
         <div v-if="fileLoadError" class="error-indicator">
@@ -37,7 +37,7 @@
               </p>
             </div>
 
-            <div v-if="currentFile || routeFileId" class="file-info-wrapper">
+            <div v-if="currentFile || passedInFileId" class="file-info-wrapper">
               <el-card class="file-info-card">
                 <template #header>
                   <div class="card-header">
@@ -46,7 +46,7 @@
                   </div>
                 </template>
                 <div class="file-info-content">
-                  <div v-if="currentFile?.name" class="file-info-row" :title="currentFile?.id || routeFileId || undefined">
+                  <div v-if="currentFile?.name" class="file-info-row" :title="currentFile?.id || passedInFileId || undefined">
                     <span class="file-info-label">name</span><span class="file-info-value">{{ currentFile.name }}</span>
                   </div>
                   <div v-if="currentFile?.size" class="file-info-row"><span class="file-info-label">size</span><span class="file-info-value">{{ formatFileSize(currentFile.size) }}</span></div>
@@ -58,16 +58,12 @@
           </div>
 
           <div class="viewer-main">
-            <div v-if="fileUrl" class="cad-viewer">
+            <div class="cad-viewer">
               <div
                 id="viewer-container"
                 ref="viewerContainer"
                 class="x-viewer-wrapper"
               ></div>
-            </div>
-
-            <div v-else class="welcome-message">
-              <el-empty description="Opening file from Google Drive™..." />
             </div>
           </div>
         </div>
@@ -113,7 +109,7 @@ const layerManagerPlugin = ref<LayerManagerPlugin | null>(null)
 const fileLoadError = ref<string>('')
 
 // Parse fileId from route.query.state (format: {"ids":["xxx"]})
-const routeFileId = computed(() => {
+const passedInFileId = computed(() => {
   const stateParam = route.query.state
   if (!stateParam || typeof stateParam !== 'string') {
     return null
@@ -131,6 +127,14 @@ const routeFileId = computed(() => {
     }
   }
   return null
+})
+
+// Show step-wise loading: signing in -> downloading -> (x-viewer loads)
+const loadingMessage = computed(() => {
+  if (!passedInFileId.value) return ''
+  if (fileUrl.value) return '' // file ready, x-viewer loads
+  if (!isAuthenticated.value || isLoading.value) return 'Signing in with Google…'
+  return 'Downloading file…'
 })
 
 const formatFileSize = (sizeStr: string) => {
@@ -175,12 +179,8 @@ const loadFileAsBlob = async (fileId: string) => {
 }
 
 const initViewer = async () => {
-  if (!viewerContainer.value || !fileUrl.value) return
-
-  if (viewer.value) {
-    viewer.value.destroy()
-    viewer.value = null
-  }
+  if (!viewerContainer.value) return
+  if (viewer.value) return
 
   try {
     const language = 'en'
@@ -233,28 +233,31 @@ const initViewer = async () => {
 
     new Viewer2dToolbarPlugin(viewerInstance as any, { menuConfig, language })
 
-    try {
-      const modelCfg = {
-        modelId: currentFile.value?.name || 'model_1',
-        src: fileUrl.value,
-        merge: true,
-      } as Model2dConfig
-      viewerInstance.loadModel(modelCfg)
-    } catch (e) {
-      console.error('Error loading file:', e)
-    }
-
     viewer.value = viewerInstance
   } catch (error) {
     console.error('Error initializing viewer:', error)
   }
 }
 
-watch([fileUrl, viewerContainer], async ([url, container]) => {
-  if (url && container && currentFile.value) {
-    await nextTick()
-    await initViewer()
+// Load model into viewer. Only after auth and file request succeeded (fileUrl and currentFile set).
+const loadModel = async () => {
+  if (!viewer.value || !fileUrl.value) return
+  try {
+    const modelCfg = {
+      modelId: currentFile.value?.name || 'model_1',
+      src: fileUrl.value,
+      merge: true,
+    } as Model2dConfig
+    viewer.value.loadModel(modelCfg)
+  } catch (e) {
+    console.error('Error loading model:', e)
   }
+}
+
+watch([fileUrl, viewerContainer, viewer], async ([url, container, v]) => {
+  if (!url || !container || !currentFile.value || !v) return
+  await nextTick()
+  await loadModel()
 }, { immediate: true })
 
 watch(currentFile, async (file) => {
@@ -262,14 +265,13 @@ watch(currentFile, async (file) => {
     fileLoadError.value = ''
     cleanupBlobUrl()
     fileUrl.value = ''
-    cleanupViewer()
     await loadFileAsBlob(file.id)
   }
 }, { immediate: true })
 
 
 const tryLoadFileFromDrive = async () => {
-  const fileId = routeFileId.value
+  const fileId = passedInFileId.value
   if (!fileId) {
     fileLoadError.value = 'Missing or invalid state parameter from Google Drive. Expected format: {"ids":["xxx"]}'
     return
@@ -287,10 +289,16 @@ const tryLoadFileFromDrive = async () => {
 }
 
 watch(isAuthenticated, async (authenticated) => {
+  if (!authenticated || !passedInFileId.value) {
+    return
+  }
   await tryLoadFileFromDrive()
 }, { immediate: true })
 
 onMounted(async () => {
+  await nextTick()
+  await initViewer()
+
   if (isAuthenticated.value) {
     await tryLoadFileFromDrive()
     return
@@ -550,14 +558,6 @@ onUnmounted(() => {
 .cad-viewer .x-viewer-wrapper {
   width: 100%;
   height: 100%;
-}
-
-.welcome-message {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
 }
 
 @media (max-width: 1024px) {
