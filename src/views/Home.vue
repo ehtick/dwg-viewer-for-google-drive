@@ -188,6 +188,15 @@ const initViewer = async () => {
           }
         },
         mutexIds: []
+      },
+      [ToolbarMenuId.Markup]: {
+        visible: false
+      },
+      [ToolbarMenuId.MarkupVisibility]: {
+        visible: false
+      },
+      [ToolbarMenuId.Settings]: {
+        visible: false
       }
     }
 
