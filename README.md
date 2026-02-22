@@ -1,6 +1,6 @@
 # DWG Viewer for Google Drive™
 
-A modern web application that integrates Google Drive™ with a powerful DWG viewer, allowing you to view DWG/DXF files directly from your Google Drive™.
+A web application that lets you view DWG/DXF files from Google Drive™. In the Google Drive™ web interface, right‑click a DWG or DXF file and choose **Open with** → **DWG Viewer** to open and view the file in the browser.
 
 ## Supported File Formats
 
@@ -17,7 +17,6 @@ A modern web application that integrates Google Drive™ with a powerful DWG vie
 - ⚙️ **Settings Panel**: Customize viewer settings and preferences
 - 🎛️ **Interactive Toolbar**: Easy access to all viewer tools and features
 - 🔄 **Layout Switching**: Switch between different layouts in multi-layout drawings
-- 📤 **Local File Upload**: Upload and view local DWG/DXF files directly
 - 🎯 **Navigation Tools**: Zoom, pan, rotate with axis gizmo and bottom bar controls
 
 ## Installation
@@ -38,17 +37,16 @@ pnpm install
 
 2. **Enable Required APIs**:
    - Enable **Google Drive™ API**
-   - Enable **Google Picker API** (important for file picker functionality)
    - Enable **Google Identity Services** (for OAuth)
 
 3. **Create OAuth 2.0 Credentials**:
    - Go to "APIs & Services" > "Credentials"
-   - Create OAuth 2.0 Client ID (for authentication)
-   - Create API Key (for Picker API)
+   - Create OAuth 2.0 Client ID (for web application authentication)
+   - Create API Key (for Drive API calls)
    - For API Key restrictions:
      - Application restrictions: HTTP referrers (web sites)
      - Add your domain (e.g., `localhost:5173` for development, your production domain)
-     - API restrictions: Restrict to "Google Picker API" and "Google Drive™ API"
+     - API restrictions: Restrict to "Google Drive™ API"
 
 4. **Set Environment Variables**:
    Create a `.env` file in the project root:
@@ -93,42 +91,27 @@ pnpm preview
 
 ## Usage
 
-### Standard Mode (File Picker)
-1. **Authentication**: Click "Connect Google Drive™" to authenticate with your Google account
-2. **Select File**: Click "Choose File from Google Drive™" to open the Google Drive™ file picker
-3. **Pick File**: Select a DWG or DXF file from your Google Drive™
-4. **View File**: The selected file will be loaded in the integrated viewer
-5. **Navigation**: Use the CAD viewer's built-in navigation tools to zoom, pan, and explore the drawing
-
-### Google Drive™ App Mode
-1. **Install App**: Install the CAD Viewer as a Google Drive™ App
-2. **Open Files**: Right-click on CAD files in Google Drive™
-3. **Select App**: Choose "Open with" → "CAD Viewer"
-4. **View**: The file opens directly in the CAD viewer
-
+1. **Open Google Drive™** in your browser (drive.google.com).
+2. **Right‑click** a DWG or DXF file (or select it and use the “⋮” menu).
+3. **Choose “Open with”** → **“DWG Viewer”** (or the name you gave the app when installing).
+4. **Sign in** with Google if prompted and allow access.
+5. The file opens in the DWG Viewer; use the toolbar to zoom, pan, measure, and annotate.
 
 ## API Permissions
 
 The application requests the following Google Drive™ permissions:
-- `https://www.googleapis.com/auth/drive.file` - Access to files in Google Drive™ that the user has selected or opened
-- `https://www.googleapis.com/auth/drive.install` - Connect the app to your Google Drive™ (e.g. for “Open with” integration)
 
-**Note**: The application uses `drive.file` scope for file access and `drive.install` so it can be used from Google Drive™ (e.g. “Open with”). Users authenticate once and can then access files through the Google Drive™ Picker or via direct file links.
+- `https://www.googleapis.com/auth/drive.file` – Access to files you open with the app from Google Drive™
+- `https://www.googleapis.com/auth/drive.install` – Connect the app to Google Drive™ so it appears in “Open with”
 
-## Google Drive™ App Integration
-
-This application can be registered as a Google Drive™ App to handle CAD files directly. When properly configured:
-
-- Users can right-click CAD files in Google Drive™
-- Select "Open with" → "CAD Viewer"
-- The app opens with the selected file loaded
+**Note**: The app can only read files that you open via **Open with** in Google Drive™. It does not browse or list your Drive.
 
 ## Security
 
-- All authentication is handled securely through Google's OAuth 2.0 flow
+- Authentication is handled via Google OAuth 2.0
 - API credentials are stored as environment variables
-- The application uses `drive.file` and `drive.install` scopes for access to Google Drive™ and “Open with” integration
-- No file data is stored locally or transmitted to third-party servers
+- The app uses `drive.file` and `drive.install` only for “Open with” and reading the opened file
+- File content is not stored on our servers or sent to third parties
 
 ## Contributing
 

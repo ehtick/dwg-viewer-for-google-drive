@@ -34,13 +34,11 @@
         <h2>2. Description of the Service</h2>
         <p>
           Subject to your compliance with these Terms, we grant you a limited, non-exclusive, revocable license to use
-          the Service for viewing DWG and DXF files from your Google Drive™. The Service provides:
+          the Service for viewing DWG and DXF files from your Google Drive™. The Service works only when you open a file via <strong>Open with</strong> in the Google Drive™ web interface. It provides:
         </p>
         <ul>
-          <li>Authentication with your Google account to access your Google Drive™</li>
-          <li>Listing and selection of DWG/DXF files from your Drive</li>
-          <li>In-browser viewing of selected files (file content is processed locally in your browser and is not stored on our servers)</li>
-          <li>Optional local file viewing for DWG/DXF files on your device</li>
+          <li>Authentication with your Google account to open files you choose via “Open with” in Google Drive™</li>
+          <li>In-browser viewing of the file you opened (file content is processed locally in your browser and is not stored on our servers)</li>
         </ul>
         <p>
           We may modify, suspend, or discontinue any part of the Service at any time. Your continued use of the Service

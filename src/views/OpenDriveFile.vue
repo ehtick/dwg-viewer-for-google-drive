@@ -33,7 +33,7 @@
                 <strong>DWG Viewer</strong> is a web application that lets you <strong>view DWG and DXF CAD drawing files</strong> stored in your Google Drive™ without downloading them or installing desktop software.
               </p>
               <p class="purpose-text">
-                We use Google Drive™ access only to <strong>list and open the files you choose</strong> via the file picker. We do not access, store, or process your files beyond displaying them in the viewer. You can also view local files without connecting to Google Drive™.
+                We use Google Drive™ access only to <strong>open the files you choose</strong> via “Open with” in Google Drive™. We do not access, store, or process your files beyond displaying them in the viewer.
               </p>
             </div>
 

@@ -21,19 +21,14 @@
       <section>
         <h2>1. Information We Collect</h2>
         <p>
-          The Service allows you to view DWG and DXF files from your Google Drive™. To provide this functionality:
+          The Service allows you to view DWG and DXF files from your Google Drive™ when you open them via <strong>Open with</strong> in the Google Drive™ web interface. To provide this functionality:
         </p>
         <ul>
           <li>
-            <strong>Google Account:</strong> When you sign in, we use Google OAuth to access your Google account
-            only for the purpose of listing and opening files from your Google Drive™. We do not store your Google
-            password.
+            <strong>Google Account:</strong> When you sign in, we use Google OAuth only to open and read the files you choose to open with the app from Google Drive™. We do not store your Google password.
           </li>
           <li>
-            <strong>Drive file access:</strong> We request permission (<code>drive.file</code> scope) to read
-            file metadata and file content from your Google Drive™. We also request <code>drive.install</code> so the app
-            can connect to your Google Drive™ (e.g. appear in “Open with” for files). File content is loaded in your browser and is not sent
-            to our servers for storage. The app cannot modify or delete your files.
+            <strong>Drive file access:</strong> We request <code>drive.file</code> and <code>drive.install</code> so the app can appear in “Open with” and read only the file you open with it. We do not browse or list your Drive. File content is loaded in your browser and is not sent to our servers. The app cannot modify or delete your files.
           </li>
           <li>
             <strong>Local storage:</strong> We may store tokens or preferences in your browser (e.g. for
@@ -46,8 +41,8 @@
         <h2>2. How We Use Your Information</h2>
         <p>We use the information described above to:</p>
         <ul>
-          <li>Authenticate you with Google and display your Drive files</li>
-          <li>Load and display the DWG/DXF files you select in the viewer</li>
+          <li>Authenticate you with Google and open the file you chose via “Open with” in Google Drive™</li>
+          <li>Load and display that DWG/DXF file in the viewer</li>
           <li>Improve and maintain the Service</li>
         </ul>
         <p>We do not use your data to train or fine-tune machine learning models.</p>

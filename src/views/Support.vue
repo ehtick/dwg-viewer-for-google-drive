@@ -22,22 +22,24 @@
       <section>
         <h2>📖 Getting Started</h2>
         <h3>How to Use the Application</h3>
+        <p>
+          Open files from the Google Drive™ web interface using <strong>Open with</strong>.
+        </p>
         <ol>
           <li>
-            <strong>Connect to Google Drive™:</strong> Click the "Connect Google Drive™" button to authenticate with your
-            Google account. You'll be asked to grant permission to access your Google Drive™ files.
+            <strong>Open Google Drive™</strong> in your browser (drive.google.com).
           </li>
           <li>
-            <strong>Select a File:</strong> After connecting, click "Choose File from Google Drive™" to open the file
-            picker. Browse and select a DWG or DXF file from your Drive.
+            <strong>Right‑click</strong> a DWG or DXF file (or select it and use the “⋮” menu).
           </li>
           <li>
-            <strong>View Your File:</strong> Once selected, the file will automatically load in the viewer. Use the
-            toolbar controls to zoom, pan, measure, and annotate your drawing.
+            <strong>Choose “Open with”</strong> → <strong>“DWG Viewer”</strong> (or the name you gave the app when installing).
           </li>
           <li>
-            <strong>View Local Files:</strong> You can also upload and view local DWG/DXF files from your computer using
-            the "View Local Files" option.
+            <strong>Sign in</strong> with Google if prompted and allow access. The file will open in the viewer.
+          </li>
+          <li>
+            Use the toolbar to zoom, pan, measure, and annotate your drawing.
           </li>
         </ol>
       </section>
@@ -65,17 +67,14 @@
           <h3>Is my data secure?</h3>
           <p>
             Yes. The application uses Google's OAuth 2.0 for secure authentication. File content is processed locally in
-            your browser and is never sent to our servers. We only request minimal permissions to access files you
-            explicitly select. For more details, see our <router-link to="/privacy">Privacy Policy</router-link>.
+            your browser and is never sent to our servers. We only access files you explicitly open via “Open with” in Google Drive™. For more details, see our <router-link to="/privacy">Privacy Policy</router-link>.
           </p>
         </div>
 
         <div class="faq-item">
           <h3>What permissions does the app request?</h3>
           <p>
-            The app requests access to your Google Drive™ files (<code>drive.file</code> scope) and permission to connect to your Drive (<code>drive.install</code>). This allows
-            the app to read files you select via the Google Drive™ file picker or open directly from Google Drive™ (e.g. “Open with”). The app
-            has read-only access and cannot modify or delete your files.
+            The app requests <code>drive.file</code> and <code>drive.install</code> so it can appear in “Open with” and read only the files you open with it from Google Drive™. It does not browse or list your Drive. The app has read-only access and cannot modify or delete your files.
           </p>
         </div>
 
@@ -126,14 +125,14 @@
 
         <div class="troubleshooting-item">
           <h3>File Won't Load</h3>
-          <p><strong>Problem:</strong> Selected file doesn't load or shows an error.</p>
+          <p><strong>Problem:</strong> The file doesn't load or shows an error after opening with DWG Viewer.</p>
           <p><strong>Solutions:</strong></p>
           <ul>
             <li>Verify the file is a valid DWG or DXF file</li>
             <li>Check that the file isn't corrupted or password-protected</li>
             <li>Ensure you have permission to access the file in Google Drive™</li>
-            <li>Try refreshing the page and selecting the file again</li>
-            <li>For very large files, loading may take longer - please be patient</li>
+            <li>Try opening the file again from Drive (right‑click → Open with → DWG Viewer)</li>
+            <li>For very large files, loading may take longer — please wait</li>
           </ul>
         </div>
 
@@ -151,14 +150,13 @@
         </div>
 
         <div class="troubleshooting-item">
-          <h3>File Picker Not Opening</h3>
-          <p><strong>Problem:</strong> Google Drive™ file picker doesn't appear.</p>
+          <h3>“Open with” Option Not Showing</h3>
+          <p><strong>Problem:</strong> DWG Viewer doesn’t appear in the “Open with” menu in Google Drive™.</p>
           <p><strong>Solutions:</strong></p>
           <ul>
-            <li>Check that pop-up blockers are disabled for this site</li>
-            <li>Ensure JavaScript is enabled in your browser</li>
-            <li>Verify your internet connection is stable</li>
-            <li>Try refreshing the page and clicking the button again</li>
+            <li>Ensure the app is installed or connected to your Google Drive™ (e.g. via your organization or the first time you opened a file with it)</li>
+            <li>Right‑click a DWG or DXF file (or use the “⋮” menu on the file) and look for “Open with”</li>
+            <li>Try from drive.google.com in a supported browser (Chrome, Firefox, Edge, Safari)</li>
           </ul>
         </div>
       </section>
