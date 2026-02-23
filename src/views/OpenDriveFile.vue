@@ -296,6 +296,11 @@ watch(isAuthenticated, async (authenticated) => {
 }, { immediate: true })
 
 onMounted(async () => {
+  if (!passedInFileId.value) {
+    fileLoadError.value = 'No valid file ID provided. Open a file from Google Drive via "Open with" to view it here.'
+    return
+  }
+
   await nextTick()
   await initViewer()
 
