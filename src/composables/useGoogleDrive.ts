@@ -1,9 +1,13 @@
 import { onMounted, ref } from 'vue'
+import {
+  getRedirectResultToken,
+  signInWithRedirectFlow,
+  signOutFirebase
+} from '../lib/firebase-auth'
 
 // Google Drive API configuration
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY || ''
-// const SCOPES = 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive.readonly'
 const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.install'
 
 // interface UserInfo {
@@ -21,15 +25,6 @@ interface DriveFile {
   url: string
 }
 
-
-// Google Drive App integration
-interface DriveAppAction {
-  // action: string
-  fileId: string
-  fileName: string
-  mimeType: string
-}
-
 // Shared state so all components (App.vue, GoogleDriveAuth, GoogleDriveFilePicker) see the same isAuthenticated
 const isAuthenticated = ref(false)
 const isLoading = ref(false)
@@ -40,16 +35,17 @@ const currentFile = ref<DriveFile | null>(null)
 //   picture: ''
 // })
 
-let tokenClient: any = null
+// GSI: Google Identity Services (popup sign-in)
+const authMode: 'redirect' | 'gsi' = 'gsi'
+let tokenClient: any = null // used for GSI mode
 let gapiInited = false
-let gisInited = false
 
 
 export function useGoogleDrive() {
 
   // Initialize Google APIs
   const initializeGoogleAPIs = async () => {
-    if (gapiInited && gisInited) return
+    if (gapiInited) return
 
     try {
       // Load the Google API client library
@@ -80,21 +76,24 @@ export function useGoogleDrive() {
         discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
       })
 
+      if (authMode === 'redirect') {
+        // Firebase redirect: no GSI token client; auth via signInWithRedirect / getRedirectResult
+      } else if (CLIENT_ID && typeof google !== 'undefined') {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: handleTokenResponse
+        })
+      }
       gapiInited = true
-
-      // Initialize Google Identity Services
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: handleTokenResponse
-      })
-
-      gisInited = true
     } catch (error) {
       console.error('Failed to initialize Google APIs:', error)
     }
   }
 
+  /**
+   * Handle token response for GSI mode.
+   */
   const handleTokenResponse = (response: any) => {
     if (response.error) {
       console.error('Authentication error:', response.error)
@@ -130,45 +129,47 @@ export function useGoogleDrive() {
   }
 
   const authenticate = async () => {
-    if (!CLIENT_ID || !API_KEY) {
+    if (!API_KEY) {
       console.error('Google API credentials not configured')
       return
     }
-
     isLoading.value = true
+    await initializeGoogleAPIs()
     try {
-      await initializeGoogleAPIs()
-
-      if (tokenClient) {
+      if (authMode === 'redirect') {
+        await signInWithRedirectFlow()
+      } else if (authMode === 'gsi' && tokenClient) {
         tokenClient.requestAccessToken()
+      } else {
+        console.error('No auth method configured. Set Firebase env or VITE_GOOGLE_CLIENT_ID.')
       }
     } catch (error) {
       console.error('Authentication failed:', error)
-    } finally {
-      isLoading.value = false
     }
+    isLoading.value = false
   }
 
-  const signOut = () => {
-    const token = gapi.client.getToken()
-    if (token) {
-      google.accounts.oauth2.revoke(token.access_token)
-      gapi.client.setToken('')
+  const signOut = async () => {
+    if (authMode === 'redirect') {
+      try {
+        await signOutFirebase()
+      } catch (e) {
+        console.warn('Sign-out failed:', e)
+      }
+    } else if (authMode === 'gsi' && typeof gapi !== 'undefined' && gapi.client?.getToken) {
+      const token = gapi.client.getToken()
+      if (token && typeof google !== 'undefined' && google.accounts?.oauth2?.revoke) {
+        google.accounts.oauth2.revoke(token.access_token)
+        gapi.client.setToken('')
+      }
     }
 
-    // Clear saved token from localStorage
     localStorage.removeItem('google_drive_token')
-
     isAuthenticated.value = false
-    // userInfo.name = ''
-    // userInfo.email = ''
-    // userInfo.picture = ''
   }
 
   // Handle Google Drive App integration
-  const handleDriveAppAction = async (action: DriveAppAction) => {
-    console.log('Drive App Action:', action)
-
+  const handleDriveAppAction = async (fileId: string) => {
     try {
       // Ensure APIs are initialized first
       await initializeGoogleAPIs()
@@ -190,19 +191,12 @@ export function useGoogleDrive() {
       }
 
       // Get file details after authentication
-      const fileDetails = await getFileDetails(action.fileId)
+      const fileDetails = await getFileDetails(fileId)
       if (fileDetails) {
         currentFile.value = fileDetails
       } else {
         // If file details cannot be fetched, create a minimal file object from URL params
-        currentFile.value = {
-          id: action.fileId,
-          name: action.fileName || 'Unknown File',
-          size: '0',
-          lastEditedUtc: '',
-          mimeType: action.mimeType || '',
-          url: ''
-        }
+        currentFile.value = { id: fileId } as DriveFile
       }
     } catch (error) {
       console.error('Error handling Drive App action:', error)
@@ -232,23 +226,23 @@ export function useGoogleDrive() {
     }
   }
 
-  const getFileDownloadUrl = async (fileId: string): Promise<string> => {
-    if (!isAuthenticated.value) {
-      throw new Error('Not authenticated')
-    }
+  // const getFileDownloadUrl = async (fileId: string): Promise<string> => {
+  //   if (!isAuthenticated.value) {
+  //     throw new Error('Not authenticated')
+  //   }
 
-    try {
-      const response = await gapi.client.drive.files.get({
-        fileId: fileId,
-        fields: 'webContentLink'
-      })
+  //   try {
+  //     const response = await gapi.client.drive.files.get({
+  //       fileId: fileId,
+  //       fields: 'webContentLink'
+  //     })
 
-      return response.result.webContentLink || ''
-    } catch (error) {
-      console.error('Error getting download URL:', error)
-      throw error
-    }
-  }
+  //     return response.result.webContentLink || ''
+  //   } catch (error) {
+  //     console.error('Error getting download URL:', error)
+  //     throw error
+  //   }
+  // }
 
   const getFileContent = async (fileId: string): Promise<ArrayBuffer> => {
     if (!isAuthenticated.value) {
@@ -373,88 +367,101 @@ export function useGoogleDrive() {
   //   }
   // }
 
-  // Restore authentication from localStorage
-  const restoreAuth = async () => {
+  const tryRestoreAuth = async () => {
     try {
+      // Firstly, try to restore auth from localStorage
       const savedTokenStr = localStorage.getItem('google_drive_token')
-      if (!savedTokenStr) {
-        return false
+      if (savedTokenStr) {
+        let savedToken: { access_token?: string; expires_in?: number; saved_at?: number; scope?: string; token_type?: string } | null = null
+        try {
+          savedToken = JSON.parse(savedTokenStr)
+        } catch {
+          localStorage.removeItem('google_drive_token')
+        }
+        if (savedToken?.access_token) {
+          const expiresIn = savedToken.expires_in ?? 3600
+          const savedAt = savedToken.saved_at ?? 0
+          const elapsedSeconds = (Date.now() - savedAt) / 1000
+          if (elapsedSeconds < expiresIn - 300) {
+            await initializeGoogleAPIs()
+            gapi.client.setToken({
+              access_token: savedToken.access_token,
+              expires_in: Math.max(0, expiresIn - elapsedSeconds),
+              scope: savedToken.scope,
+              token_type: savedToken.token_type || 'Bearer'
+            })
+            isAuthenticated.value = true
+            return
+          }
+          localStorage.removeItem('google_drive_token')
+          isAuthenticated.value = false
+        }
       }
 
-      const savedToken = JSON.parse(savedTokenStr)
-
-      // Check if token is expired (with 5 minute buffer)
-      const expiresIn = savedToken.expires_in || 3600 // Default to 1 hour
-      const savedAt = savedToken.saved_at || 0
-      const now = Date.now()
-      const elapsedSeconds = (now - savedAt) / 1000
-
-      if (elapsedSeconds >= expiresIn - 300) { // 5 minute buffer
-        // Token expired, remove it
-        localStorage.removeItem('google_drive_token')
-        return false
+      // Secondly, try to restore auth from Firebase redirect result
+      if (authMode === 'redirect') {
+        const redirectToken = await getRedirectResultToken()
+        if (redirectToken) {
+          const tokenData = { ...redirectToken, saved_at: Date.now() }
+          const key = 'google_drive_token'
+          localStorage.setItem(key, JSON.stringify(tokenData))
+          if (import.meta.env.DEV && !localStorage.getItem(key)) {
+            console.warn('[Auth] Failed to persist token on current origin. Ensure redirect lands on your app URL (e.g. localhost:5173).')
+          }
+          await initializeGoogleAPIs()
+          gapi.client.setToken({
+            access_token: redirectToken.access_token,
+            expires_in: redirectToken.expires_in,
+            scope: redirectToken.scope,
+            token_type: redirectToken.token_type || 'Bearer'
+          })
+          isAuthenticated.value = true
+          return
+        }
       }
-
-      // Initialize APIs first
-      await initializeGoogleAPIs()
-
-      // Restore token to gapi client
-      const token = {
-        access_token: savedToken.access_token,
-        expires_in: expiresIn - elapsedSeconds,
-        scope: savedToken.scope,
-        token_type: savedToken.token_type || 'Bearer'
-      }
-
-      gapi.client.setToken(token)
-      isAuthenticated.value = true
-      return true
     } catch (error) {
+      isAuthenticated.value = false
       console.error('Error restoring authentication:', error)
       localStorage.removeItem('google_drive_token')
-      return false
     }
   }
 
-  // Initialize Drive App integration
   onMounted(async () => {
-    // Try to restore authentication from localStorage
-    await restoreAuth()
+    // await tryRestoreAuth();
 
-    // Check if we're being opened as a Drive App
-    const urlParams = new URLSearchParams(window.location.search)
-    const action = urlParams.get('action')
-    const fileId = urlParams.get('fileId')
-    const fileName = urlParams.get('fileName')
-    const mimeType = urlParams.get('mimeType')
+    // // Check if we're being opened as a Drive App
+    // const urlParams = new URLSearchParams(window.location.search)
+    // const action = urlParams.get('action')
+    // const fileId = urlParams.get('fileId')
+    // const fileName = urlParams.get('fileName')
+    // const mimeType = urlParams.get('mimeType')
 
-    if (action && fileId && fileName && mimeType) {
-      handleDriveAppAction({
-        fileId,
-        fileName,
-        mimeType
-      })
-    }
+    // if (action && fileId && fileName && mimeType) {
+    //   handleDriveAppAction({
+    //     fileId,
+    //     fileName,
+    //     mimeType
+    //   })
+    // }
 
-    // Listen for Drive App messages
-    window.addEventListener('message', (event) => {
-      if (event.origin === 'https://drive.google.com' && event.data.type === 'drive-app-action') {
-        handleDriveAppAction(event.data.action)
-      }
-    })
+    // // Listen for Drive App messages
+    // window.addEventListener('message', (event) => {
+    //   if (event.origin === 'https://drive.google.com' && event.data.type === 'drive-app-action') {
+    //     handleDriveAppAction(event.data.action)
+    //   }
+    // })
   })
 
   return {
     isAuthenticated,
     isLoading,
-    // userInfo,
+    tryRestoreAuth,
     currentFile,
     authenticate,
     signOut,
-    // openFilePicker,
     getFileContent,
-    getFileDownloadUrl,
-    getFileDetails,
+    // getFileDownloadUrl,
+    // getFileDetails,
     handleDriveAppAction
   }
 }

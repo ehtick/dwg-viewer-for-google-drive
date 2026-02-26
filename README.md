@@ -51,9 +51,19 @@ pnpm install
 4. **Set Environment Variables**:
    Create a `.env` file in the project root:
    ```env
-   VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
    VITE_GOOGLE_API_KEY=your-api-key
    ```
+   - **Recommended: Firebase redirect sign-in** (no popup, no custom backend; works in iframes and for review).  
+     In [Firebase Console](https://console.firebase.google.com/) create a project → enable **Authentication** → add **Google** sign-in → copy the web app config from project settings and add to `.env`:
+   ```env
+   VITE_FIREBASE_API_KEY=...
+   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project-id
+   VITE_FIREBASE_APP_ID=...
+   ```
+   Firebase handles redirect and token issuance; this app only integrates on the frontend.  
+   If you see `auth/configuration not found`: in Firebase Console go to **Authentication** → **Sign-in method** → open **Google** → turn **Enable** on → **Save**.
+   - **Optional: popup-only sign-in** (requires allowing popups): set `VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com` when not using Firebase.
 
 5. **Configure OAuth Consent Screen**:
    - Go to "APIs & Services" > "OAuth consent screen"

@@ -96,6 +96,7 @@ const route = useRoute()
 const {
   isAuthenticated,
   isLoading,
+  tryRestoreAuth,
   currentFile,
   getFileContent,
   authenticate,
@@ -269,30 +270,16 @@ watch(currentFile, async (file) => {
   }
 }, { immediate: true })
 
-
-const tryLoadFileFromDrive = async () => {
+watch(isAuthenticated, async (authenticated) => {
+  if (!authenticated) {
+    return
+  }
   const fileId = passedInFileId.value
   if (!fileId) {
     fileLoadError.value = 'Missing or invalid state parameter from Google Drive. Expected format: {"ids":["xxx"]}'
     return
   }
-  try {
-    await handleDriveAppAction({
-      fileId,
-      fileName: '',
-      mimeType: ''
-    })
-  } catch (error) {
-    console.error('Error loading file from Google Drive:', error)
-    fileLoadError.value = error instanceof Error ? error.message : 'Failed to load file from Google Drive.'
-  }
-}
-
-watch(isAuthenticated, async (authenticated) => {
-  if (!authenticated || !passedInFileId.value) {
-    return
-  }
-  await tryLoadFileFromDrive()
+  await handleDriveAppAction(fileId)
 }, { immediate: true })
 
 onMounted(async () => {
@@ -304,19 +291,12 @@ onMounted(async () => {
   await nextTick()
   await initViewer()
 
-  if (isAuthenticated.value) {
-    await tryLoadFileFromDrive()
-    return
-  }
-
-  let retries = 0
-  while (!isAuthenticated.value && retries < 15) {
-    await new Promise(resolve => setTimeout(resolve, 200))
-    retries++
-  }
+  // Wait for auth restore (e.g. Firebase redirect result) before deciding to redirect to sign-in.
+  await tryRestoreAuth()
   if (!isAuthenticated.value) {
     await authenticate()
   }
+  // We'll watch isAuthenticated, and call tryLoadFileFromDrive when it becomes true.
 })
 
 onUnmounted(() => {
