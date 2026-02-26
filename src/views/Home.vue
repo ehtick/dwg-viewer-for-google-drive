@@ -45,9 +45,9 @@
               <GoogleDriveAuth />
             </div>
 
-            <div class="picker-section">
+            <!-- <div class="picker-section">
               <GoogleDriveFilePicker @file-selected="handleFileSelected" enable-file-picker="isAuthenticated" />
-            </div>
+            </div> -->
           </div>
 
           <div class="viewer-main">
@@ -87,7 +87,7 @@ import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 
 import GoogleDriveAuth from '../components/GoogleDriveAuth.vue'
-import GoogleDriveFilePicker from '../components/GoogleDriveFilePicker.vue'
+// import GoogleDriveFilePicker from '../components/GoogleDriveFilePicker.vue'
 import { useGoogleDrive } from '../composables/useGoogleDrive'
 
 interface DriveFile {
@@ -226,14 +226,14 @@ watch([fileUrl, viewerContainer], async ([url, container]) => {
   }
 }, { immediate: true })
 
-const handleFileSelected = async (file: DriveFile) => {
-  fileLoadError.value = ''
-  selectedFile.value = file
-  cleanupBlobUrl()
-  fileUrl.value = ''
-  cleanupViewer()
-  await loadFileAsBlob(file.id)
-}
+// const handleFileSelected = async (file: DriveFile) => {
+//   fileLoadError.value = ''
+//   selectedFile.value = file
+//   cleanupBlobUrl()
+//   fileUrl.value = ''
+//   cleanupViewer()
+//   await loadFileAsBlob(file.id)
+// }
 
 watch(currentFile, async (file) => {
   if (file) {

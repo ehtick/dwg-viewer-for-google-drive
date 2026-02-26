@@ -288,90 +288,90 @@ export function useGoogleDrive() {
     }
   }
 
-  // Google Drive Picker API - allows user to select a file from Google Drive™
-  const openFilePicker = async (): Promise<DriveFile> => {
-    if (!isAuthenticated.value) {
-      throw new Error('Please authenticate first')
-    }
+  // // Google Drive Picker API - allows user to select a file from Google Drive™
+  // const openFilePicker = async (): Promise<DriveFile> => {
+  //   if (!isAuthenticated.value) {
+  //     throw new Error('Please authenticate first')
+  //   }
 
-    if (!API_KEY) {
-      throw new Error('Google API Key is not configured. Please set VITE_GOOGLE_API_KEY in your environment variables.')
-    }
+  //   if (!API_KEY) {
+  //     throw new Error('Google API Key is not configured. Please set VITE_GOOGLE_API_KEY in your environment variables.')
+  //   }
 
-    const token = gapi.client.getToken()
-    if (!token || !token.access_token) {
-      throw new Error('No access token available. Please authenticate first.')
-    }
-    // console.log('token.access_token:', token.access_token)
+  //   const token = gapi.client.getToken()
+  //   if (!token || !token.access_token) {
+  //     throw new Error('No access token available. Please authenticate first.')
+  //   }
+  //   // console.log('token.access_token:', token.access_token)
 
-    return new Promise((resolve, reject) => {
-      // Load the Picker API if not already loaded
-      if (typeof google?.picker === 'undefined') {
-        gapi.load('picker', () => {
-          createPicker(token.access_token, resolve, reject)
-        })
-      } else {
-        createPicker(token.access_token, resolve, reject)
-      }
-    })
-  }
+  //   return new Promise((resolve, reject) => {
+  //     // Load the Picker API if not already loaded
+  //     if (typeof google?.picker === 'undefined') {
+  //       gapi.load('picker', () => {
+  //         createPicker(token.access_token, resolve, reject)
+  //       })
+  //     } else {
+  //       createPicker(token.access_token, resolve, reject)
+  //     }
+  //   })
+  // }
 
-  const createPicker = (accessToken: string, resolve: (file: DriveFile) => void, reject: (error: Error) => void) => {
-    try {
-      if (!API_KEY) {
-        reject(new Error('Google API Key is not configured. Please set VITE_GOOGLE_API_KEY in your environment variables.'))
-        return
-      }
+  // const createPicker = (accessToken: string, resolve: (file: DriveFile) => void, reject: (error: Error) => void) => {
+  //   try {
+  //     if (!API_KEY) {
+  //       reject(new Error('Google API Key is not configured. Please set VITE_GOOGLE_API_KEY in your environment variables.'))
+  //       return
+  //     }
 
-      // Create a DocsView with MIME type filtering
-      const docsView = new google.picker.DocsView(google.picker.ViewId.DOCS)
-      docsView.setMimeTypes('application/acad,application/dxf,image/vnd.dwg,image/vnd.dxf,application/autocad_dwg,application/autocad_dxf')
-      // Set to list view mode
-      docsView.setMode('list') // 'grid'
+  //     // Create a DocsView with MIME type filtering
+  //     const docsView = new google.picker.DocsView(google.picker.ViewId.DOCS)
+  //     docsView.setMimeTypes('application/acad,application/dxf,image/vnd.dwg,image/vnd.dxf,application/autocad_dwg,application/autocad_dxf')
+  //     // Set to list view mode
+  //     docsView.setMode('list') // 'grid'
 
-      const picker = new google.picker.PickerBuilder()
-        .enableFeature(google.picker.Feature.NAV_HIDDEN)
-        // .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
-        .enableFeature(google.picker.Feature.SUPPORT_DRIVES)
-        .setOAuthToken(accessToken)
-        .setDeveloperKey(API_KEY)
-        .addView(docsView)
-        .setCallback((data: any) => {
-          if (data[google.picker.Response.ACTION] === google.picker.Action.PICKED) {
-            const file = data[google.picker.Response.DOCUMENTS][0]
-            const pickerFile: DriveFile = {
-              id: file.id,
-              name: file.name || 'Unknown',
-              size: file.sizeBytes ? file.sizeBytes.toString() : '0',
-              lastEditedUtc: file.lastEditedUtc || file.lastEditedUtc || '',
-              mimeType: file.mimeType || '',
-              url: file.url || ''
-            }
-            resolve(pickerFile)
-          } else if (data[google.picker.Response.ACTION] === google.picker.Action.CANCEL) {
-            reject(new Error('User cancelled file selection'))
-          }
-        })
-        .build()
+  //     const picker = new google.picker.PickerBuilder()
+  //       .enableFeature(google.picker.Feature.NAV_HIDDEN)
+  //       // .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+  //       .enableFeature(google.picker.Feature.SUPPORT_DRIVES)
+  //       .setOAuthToken(accessToken)
+  //       .setDeveloperKey(API_KEY)
+  //       .addView(docsView)
+  //       .setCallback((data: any) => {
+  //         if (data[google.picker.Response.ACTION] === google.picker.Action.PICKED) {
+  //           const file = data[google.picker.Response.DOCUMENTS][0]
+  //           const pickerFile: DriveFile = {
+  //             id: file.id,
+  //             name: file.name || 'Unknown',
+  //             size: file.sizeBytes ? file.sizeBytes.toString() : '0',
+  //             lastEditedUtc: file.lastEditedUtc || file.lastEditedUtc || '',
+  //             mimeType: file.mimeType || '',
+  //             url: file.url || ''
+  //           }
+  //           resolve(pickerFile)
+  //         } else if (data[google.picker.Response.ACTION] === google.picker.Action.CANCEL) {
+  //           reject(new Error('User cancelled file selection'))
+  //         }
+  //       })
+  //       .build()
 
-      picker.setVisible(true)
-    } catch (error: any) {
-      console.error('Error creating picker:', error)
-      let errorMessage = 'Failed to open file picker. '
+  //     picker.setVisible(true)
+  //   } catch (error: any) {
+  //     console.error('Error creating picker:', error)
+  //     let errorMessage = 'Failed to open file picker. '
 
-      if (error?.message?.includes('developer key') || error?.message?.includes('API key')) {
-        errorMessage += 'The Google API Key is invalid or not configured correctly. Please check:\n' +
-          '1. VITE_GOOGLE_API_KEY is set in your .env file\n' +
-          '2. The API key is valid in Google Cloud Console\n' +
-          '3. Google Picker API is enabled for your project\n' +
-          '4. The API key has no restrictions or allows your domain'
-      } else {
-        errorMessage += 'Please try again.'
-      }
+  //     if (error?.message?.includes('developer key') || error?.message?.includes('API key')) {
+  //       errorMessage += 'The Google API Key is invalid or not configured correctly. Please check:\n' +
+  //         '1. VITE_GOOGLE_API_KEY is set in your .env file\n' +
+  //         '2. The API key is valid in Google Cloud Console\n' +
+  //         '3. Google Picker API is enabled for your project\n' +
+  //         '4. The API key has no restrictions or allows your domain'
+  //     } else {
+  //       errorMessage += 'Please try again.'
+  //     }
 
-      reject(new Error(errorMessage))
-    }
-  }
+  //     reject(new Error(errorMessage))
+  //   }
+  // }
 
   // Restore authentication from localStorage
   const restoreAuth = async () => {
@@ -451,7 +451,7 @@ export function useGoogleDrive() {
     currentFile,
     authenticate,
     signOut,
-    openFilePicker,
+    // openFilePicker,
     getFileContent,
     getFileDownloadUrl,
     getFileDetails,

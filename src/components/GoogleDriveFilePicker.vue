@@ -1,5 +1,5 @@
 <template>
-  <div class="google-drive-picker">
+  <!-- <div class="google-drive-picker">
     <el-card class="picker-card">
       <template #header>
         <div class="card-header">
@@ -59,10 +59,10 @@
         </div>
       </div>
     </el-card>
-  </div>
+  </div> -->
 </template>
 
-<script setup lang="ts">
+<!-- <script setup lang="ts">
 import { Document, FolderOpened } from '@element-plus/icons-vue'
 import { ElAlert, ElButton, ElCard, ElIcon } from 'element-plus'
 import { ref } from 'vue'
@@ -236,4 +236,4 @@ const formatDate = (dateString: string) => {
 .error-message {
   margin-top: 16px;
 }
-</style>
+</style> -->
