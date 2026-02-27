@@ -3,7 +3,7 @@ import {
   getRedirectResultToken,
   signInWithRedirectFlow,
   signOutFirebase
-} from '../lib/firebase-auth'
+} from '../services/firebase-auth'
 
 // Google Drive API configuration
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
@@ -36,6 +36,7 @@ const currentFile = ref<DriveFile | null>(null)
 // })
 
 // GSI: Google Identity Services (popup sign-in)
+// redirect: Firebase redirect (redirect to sign-in page)
 const authMode: 'redirect' | 'gsi' = 'gsi'
 let tokenClient: any = null // used for GSI mode
 let gapiInited = false
