@@ -157,12 +157,11 @@ export function useGoogleDrive() {
       } catch (e) {
         console.warn('Sign-out failed:', e)
       }
-    } else if (authMode === 'gsi' && typeof gapi !== 'undefined' && gapi.client?.getToken) {
-      const token = gapi.client.getToken()
-      if (token && typeof google !== 'undefined' && google.accounts?.oauth2?.revoke) {
-        google.accounts.oauth2.revoke(token.access_token)
-        gapi.client.setToken('')
-      }
+    } else if (authMode === 'gsi' && typeof gapi !== 'undefined' && gapi.client?.setToken) {
+      // Calling revoke will remove "DWG Viewer" from https://myaccount.google.com/connections
+      // So, don't call it here
+      // google.accounts.oauth2.revoke(token.access_token)
+      gapi.client.setToken('')
     }
 
     localStorage.removeItem('google_drive_token')
