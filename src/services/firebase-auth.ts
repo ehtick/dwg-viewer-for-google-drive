@@ -52,10 +52,13 @@ export function createGoogleProvider(): GoogleAuthProvider {
   return provider
 }
 
-/** Redirect to Google sign-in (full-page, no popup) */
-export async function signInWithRedirectFlow(): Promise<void> {
+/** Redirect to Google sign-in (full-page, no popup). When forceConsent is true, user is shown the consent screen every time. */
+export async function signInWithRedirectFlow(forceConsent?: boolean): Promise<void> {
   const auth = getFirebaseAuth()
   const provider = createGoogleProvider()
+  if (forceConsent) {
+    provider.setCustomParameters({ prompt: 'consent' })
+  }
   await signInWithRedirect(auth, provider)
 }
 

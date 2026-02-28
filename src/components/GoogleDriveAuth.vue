@@ -10,10 +10,17 @@
 
       <div class="auth-content">
         <div v-if="!isAuthenticated" class="auth-prompt">
+          <el-checkbox
+            v-if="isHomePage"
+            v-model="forceConsent"
+            class="force-consent-option"
+          >
+            Always show permission consent when signing in
+          </el-checkbox>
           <el-button
             type="primary"
             size="large"
-            @click="authenticate"
+            @click="() => authenticate(forceConsent)"
             :loading="isLoading"
             class="auth-button"
           >
@@ -41,15 +48,20 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { FolderOpened } from '@element-plus/icons-vue'
-import { ElAlert, ElButton, ElCard, ElIcon } from 'element-plus'
+import { ElAlert, ElButton, ElCard, ElCheckbox, ElIcon } from 'element-plus'
 
 import { useGoogleDrive } from '../composables/useGoogleDrive'
+
+const route = useRoute()
+const isHomePage = computed(() => route.name === 'Home')
+const forceConsent = ref(true)
 
 const {
   isAuthenticated,
   isLoading,
-  // userInfo,
   authenticate,
   signOut
 } = useGoogleDrive()
@@ -104,6 +116,11 @@ const {
   justify-content: flex-start;
   gap: 12px;
   text-align: center;
+}
+
+.force-consent-option {
+  align-self: flex-start;
+  white-space: normal;
 }
 
 .auth-prompt p {

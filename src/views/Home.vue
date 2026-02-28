@@ -3,13 +3,7 @@
     <div class="app-header">
       <h1>DWG Viewer</h1>
       <div class="header-actions">
-        <router-link to="/privacy" class="header-link">Privacy</router-link>
-        <router-link to="/terms" class="header-link">Terms</router-link>
-        <router-link to="/local-file">
-          <el-button type="primary" text>
-            View local files
-          </el-button>
-        </router-link>
+        <router-link to="/local-file" class="header-link">View local files</router-link>
       </div>
     </div>
 

@@ -54,7 +54,7 @@ export function useGoogleDrive() {
         const script = document.createElement('script')
         script.src = 'https://apis.google.com/js/api.js'
         script.onload = () => resolve()
-        script.onerror = () => reject(new Error('Failed to load Google API'))
+        script.onerror = () => reject(new Error('Failed to load Google API, may caused by bad network!'))
         document.head.appendChild(script)
       })
 
@@ -63,7 +63,7 @@ export function useGoogleDrive() {
         const script = document.createElement('script')
         script.src = 'https://accounts.google.com/gsi/client'
         script.onload = () => resolve()
-        script.onerror = () => reject(new Error('Failed to load Google Identity Services'))
+        script.onerror = () => reject(new Error('Failed to load Google Identity Services, may caused by bad network!'))
         document.head.appendChild(script)
       })
 
@@ -129,7 +129,7 @@ export function useGoogleDrive() {
     isAuthenticated.value = true
   }
 
-  const authenticate = async () => {
+  const authenticate = async (forceConsent = false) => {
     if (!API_KEY) {
       console.error('Google API credentials not configured')
       return
@@ -138,9 +138,9 @@ export function useGoogleDrive() {
     await initializeGoogleAPIs()
     try {
       if (authMode === 'redirect') {
-        await signInWithRedirectFlow()
+        await signInWithRedirectFlow(forceConsent)
       } else if (authMode === 'gsi' && tokenClient) {
-        tokenClient.requestAccessToken()
+        tokenClient.requestAccessToken(forceConsent ? { prompt: 'consent' } : undefined)
       } else {
         console.error('No auth method configured. Set Firebase env or VITE_GOOGLE_CLIENT_ID.')
       }

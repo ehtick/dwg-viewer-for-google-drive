@@ -3,12 +3,7 @@
     <div class="app-header">
       <h1>Terms of Service</h1>
       <div class="header-actions">
-        <router-link to="/" class="header-link">
-          <el-button type="primary" text>
-            <el-icon><ArrowLeft /></el-icon>
-            Back to Google Drive™
-          </el-button>
-        </router-link>
+        <router-link to="/home" class="header-link">Home</router-link>
       </div>
     </div>
 
@@ -140,7 +135,6 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft } from '@element-plus/icons-vue'
 </script>
 
 <style scoped>
@@ -177,7 +171,15 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 }
 
 .header-link {
+  color: white;
   text-decoration: none;
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
+
+.header-link:hover {
+  opacity: 1;
+  text-decoration: underline;
 }
 
 .terms-content {

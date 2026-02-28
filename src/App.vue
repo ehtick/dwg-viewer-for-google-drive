@@ -4,6 +4,10 @@
       <router-view />
     </main>
     <footer class="app-footer">
+      <router-link to="/privacy" class="footer-link">Privacy</router-link>
+      &nbsp;|&nbsp;
+      <router-link to="/terms" class="footer-link">Terms</router-link>
+      &nbsp;|&nbsp;
       Contact:
       <a href="mailto:thingraph@outlook.com">thingraph@outlook.com</a>
       &nbsp;|&nbsp;
@@ -46,12 +50,14 @@
   box-sizing: border-box;
 }
 
-.app-footer a {
+.app-footer a,
+.app-footer .footer-link {
   color: #409eff;
   text-decoration: none;
 }
 
-.app-footer a:hover {
+.app-footer a:hover,
+.app-footer .footer-link:hover {
   text-decoration: underline;
 }
 </style>
