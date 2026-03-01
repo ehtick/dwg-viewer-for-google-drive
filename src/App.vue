@@ -8,6 +8,10 @@
       &nbsp;|&nbsp;
       <router-link to="/terms" class="footer-link">Terms</router-link>
       &nbsp;|&nbsp;
+      <router-link to="/support" class="footer-link">Support</router-link>
+      &nbsp;|&nbsp;
+      <router-link to="/install" class="footer-link">Install</router-link>
+      &nbsp;|&nbsp;
       Contact:
       <a href="mailto:thingraph@outlook.com">thingraph@outlook.com</a>
       &nbsp;|&nbsp;
@@ -67,7 +71,11 @@
   --footer-height: 35px;
 }
 
-.app-main > .home-view,
+.app-main > .home-view {
+  flex: 1;
+  overflow: auto;
+}
+
 .app-main > .local-file-view,
 .app-main > .open-drive-file-view {
   flex: 1;

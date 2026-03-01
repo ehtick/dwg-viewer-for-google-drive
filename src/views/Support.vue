@@ -149,6 +149,7 @@
           <p><strong>Problem:</strong> DWG Viewer doesn’t appear in the “Open with” menu in Google Drive™.</p>
           <p><strong>Solutions:</strong></p>
           <ul>
+            <li><strong>Install the app first:</strong> If you have never used DWG Viewer with your Google account, you need to install it so it appears in the "Open with" menu. Go to the <router-link to="/install">Install</router-link> page, click <strong>Install</strong>, and sign in with Google to authorize the app. After that, DWG Viewer will show up when you right‑click DWG/DXF files in Drive.</li>
             <li>Ensure the app is installed or connected to your Google Drive™ (e.g. via your organization or the first time you opened a file with it)</li>
             <li>Right‑click a DWG or DXF file (or use the “⋮” menu on the file) and look for “Open with”</li>
             <li>Try from drive.google.com in a supported browser (Chrome, Firefox, Edge, Safari)</li>

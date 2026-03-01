@@ -8,17 +8,13 @@
     </div>
 
     <div class="app-content">
-      <div class="standard-mode">
-        <!-- Loading indicator below header, centered -->
-        <div v-if="isLoading" class="loading-indicator">
+      <div v-if="isLoading" class="loading-indicator">
           <el-icon class="loading-icon" size="24"><Loading /></el-icon>
           <span>Loading...</span>
         </div>
 
-        <div class="viewer-container">
-          <div class="sidebar">
-            <!-- App purpose - required for OAuth verification: homepage must explain purpose -->
-            <div class="app-purpose-section">
+      <div class="center-card">
+        <section class="app-purpose-section">
               <h2 class="purpose-title">About this application</h2>
               <p class="purpose-text">
                 <strong>DWG Viewer</strong> is a web application that lets you <strong>view DWG and DXF CAD drawing files</strong> stored in your Google Drive™ without downloading them or installing desktop software.
@@ -26,24 +22,12 @@
               <p class="purpose-text">
                 We use Google Drive™ access only to <strong>open the files you choose</strong> via “Open with” in Google Drive™. We do not access, store, or process your files beyond displaying them in the viewer.
               </p>
-            </div>
+        </section>
 
-            <!-- Google Drive Auth - always shown at top -->
-            <div class="auth-section">
-              <GoogleDriveAuth />
-            </div>
-
-            <!-- <div class="picker-section">
-              <GoogleDriveFilePicker @file-selected="handleFileSelected" enable-file-picker="isAuthenticated" />
-            </div> -->
-          </div>
-
-          <div class="viewer-main">
-            <div class="welcome-message">
-              <el-empty description="Welcome to use DWG Viewer for Google Drive™" />
-            </div>
-          </div>
-        </div>
+        <section class="auth-section">
+          <h2 class="auth-title">Google Drive Integration</h2>
+          <GoogleDriveAuth />
+        </section>
       </div>
     </div>
   </div>
@@ -74,12 +58,11 @@ onUnmounted(() => {
 
 <style scoped>
 .home-view {
-  height: 100%;
   min-height: calc(100vh - var(--footer-height, 50px));
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  overflow: hidden;
+  overflow: auto;
 }
 
 .app-header {
@@ -119,12 +102,13 @@ onUnmounted(() => {
 }
 
 .app-content {
-  flex: 1;
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
+  flex: 1 0 auto;
+  min-height: calc(100vh - var(--footer-height, 35px) - 72px);
+  padding: 32px 20px 40px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .loading-icon {
@@ -136,20 +120,7 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-.standard-mode {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-}
-
 .loading-indicator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,56 +128,36 @@ onUnmounted(() => {
   padding: 20px;
   font-size: 16px;
   color: #409EFF;
-  z-index: 100;
-  pointer-events: none;
   font-weight: 500;
 }
 
-.viewer-container {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  gap: 20px;
+.center-card {
   width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
   background: white;
-  padding-right: 2px;
-  border-radius: 0px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
   overflow: hidden;
-  margin: 0;
-}
-
-.sidebar {
-  width: 400px;
-  border-right: 1px solid #e4e7ed;
-  background: #f8f9fa;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex-shrink: 0;
-  position: relative;
-  min-height: 0;
 }
 
 .app-purpose-section {
-  flex-shrink: 0;
-  padding: 16px;
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 32px 36px 28px;
+  border-bottom: 1px solid #ebeef5;
 }
 
 .purpose-title {
-  margin: 0 0 10px 0;
-  font-size: 14px;
+  margin: 0 0 14px 0;
+  font-size: 1.15rem;
   font-weight: 600;
   color: #303133;
+  letter-spacing: -0.01em;
 }
 
 .purpose-text {
-  margin: 0 0 8px 0;
-  font-size: 12px;
-  line-height: 1.5;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.6;
   color: #606266;
 }
 
@@ -215,35 +166,15 @@ onUnmounted(() => {
 }
 
 .auth-section {
-  flex-shrink: 0;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 28px 36px 32px;
 }
 
-.picker-section {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.viewer-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-}
-
-@media (max-width: 1024px) {
-  .viewer-container {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #e4e7ed;
-    max-height: 50vh;
-  }
+.auth-title {
+  margin: 0 0 16px 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #303133;
+  letter-spacing: -0.01em;
 }
 
 @media (max-width: 768px) {
@@ -252,16 +183,20 @@ onUnmounted(() => {
   }
 
   .app-content {
-    padding: 0;
+    padding: 24px 16px 32px;
+    justify-content: flex-start;
   }
 
-  .viewer-container {
-    margin: 0;
-    border-radius: 0;
+  .center-card {
+    max-width: 100%;
   }
 
-  .sidebar {
-    max-height: 40vh;
+  .app-purpose-section {
+    padding: 24px 20px 20px;
+  }
+
+  .auth-section {
+    padding: 24px 20px 28px;
   }
 }
 </style>
