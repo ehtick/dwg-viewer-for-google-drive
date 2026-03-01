@@ -19,6 +19,11 @@
           when you right‑click a DWG or DXF file (or use the “⋮” menu on the file) in Google Drive™. You can then
           open drawings in the viewer with one click.
         </p>
+        <p>
+          The app will also show up in your
+          <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Account permissions</a>
+          page, where you can view or revoke access at any time.
+        </p>
       </section>
 
       <section v-if="installed" class="status-section installed">
