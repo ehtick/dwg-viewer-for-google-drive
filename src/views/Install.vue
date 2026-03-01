@@ -28,12 +28,15 @@
           <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer">Google Drive™</a>,
           right‑click any DWG or DXF file and choose <strong>Open with</strong> → <strong>DWG Viewer</strong> to open it here.
         </p>
+        <p class="refresh-tip">
+          <strong>Tip:</strong> If you already have Drive open in another tab, refresh that page so that <strong>DWG Viewer</strong> appears in the <strong>Open with</strong> menu.
+        </p>
         <router-link to="/home" class="btn btn-secondary">Go to Home</router-link>
       </section>
 
       <section v-else class="action-section">
         <p class="action-intro">
-          Click the button below to authorize the app with your Google account. You will be redirected to Google to sign in and grant access; when you return here, the app will be installed.
+          Click the button below to authorize the app with your Google account. A sign-in window will open; after you sign in and grant access, the app will be installed.
         </p>
         <button
           type="button"
@@ -41,7 +44,7 @@
           :disabled="loading"
           @click="startInstall"
         >
-          {{ loading ? 'Redirecting…' : 'Install' }}
+          {{ loading ? 'Opening sign-in…' : 'Install' }}
         </button>
         <p v-if="error" class="error-msg">{{ error }}</p>
       </section>
@@ -54,55 +57,54 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import {
-  getRedirectResultToken,
-  signInWithRedirectFlow
-} from '../services/firebase-auth'
+import { onMounted, ref, watch } from 'vue'
+import { useGoogleDrive } from '../composables/useGoogleDrive'
+
+const { isAuthenticated, authenticate, tryRestoreAuth } = useGoogleDrive()
 
 const installed = ref(false)
 const loading = ref(false)
 const error = ref('')
+let loadingTimeout: ReturnType<typeof setTimeout> | null = null
 
-const TOKEN_KEY = 'google_drive_token'
-
-async function checkRedirectResult() {
-  try {
-    const payload = await getRedirectResultToken()
-    if (payload) {
-      const tokenData = {
-        access_token: payload.access_token,
-        expires_in: payload.expires_in,
-        scope: payload.scope,
-        token_type: payload.token_type || 'Bearer',
-        saved_at: Date.now()
-      }
-      localStorage.setItem(TOKEN_KEY, JSON.stringify(tokenData))
-      installed.value = true
+watch(isAuthenticated, (val) => {
+  if (val) {
+    installed.value = true
+    loading.value = false
+    if (loadingTimeout != null) {
+      window.clearTimeout(loadingTimeout)
+      loadingTimeout = null
     }
-  } catch (e) {
-    console.error('Install: failed to get redirect result', e)
-    error.value = 'Authorization could not be completed. Please try again.'
   }
-}
+})
 
 async function startInstall() {
   error.value = ''
   loading.value = true
-  try {
-    const forceConsent = true;
-    await signInWithRedirectFlow(forceConsent)
-    // Redirecting away; code below may not run
-  } catch (e) {
-    console.error('Install: redirect failed', e)
-    error.value = 'Install could not start. Check that the app is configured correctly (Firebase settings).'
-  } finally {
+  loadingTimeout = window.setTimeout(() => {
     loading.value = false
+    loadingTimeout = null
+  }, 120000)
+  try {
+    await authenticate(true)
+    // GSI: popup opens; when user completes, handleTokenResponse sets isAuthenticated.
+    // Watch above will set installed and clear loading; clear timeout there too.
+  } catch (e) {
+    console.error('Install: auth failed', e)
+    error.value = 'Install could not start. Check that the app is configured (e.g. VITE_GOOGLE_CLIENT_ID).'
+    loading.value = false
+    if (loadingTimeout) {
+      window.clearTimeout(loadingTimeout)
+      loadingTimeout = null
+    }
   }
 }
 
-onMounted(() => {
-  checkRedirectResult()
+onMounted(async () => {
+  await tryRestoreAuth()
+  if (isAuthenticated.value) {
+    installed.value = true
+  }
 })
 </script>
 
@@ -194,6 +196,15 @@ h2 {
 .status-section.installed h2 {
   color: #2e7d32;
   border-bottom-color: #2e7d32;
+}
+
+.refresh-tip {
+  margin: 16px 0 0 0;
+  padding: 12px 14px;
+  background: #f0f7f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #2e7d32;
 }
 
 .action-section {
