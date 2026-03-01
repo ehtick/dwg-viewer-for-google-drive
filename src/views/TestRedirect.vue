@@ -2,7 +2,7 @@
   <div>
     <p>Calling getRedirectResult()...</p>
     <p id="resultToken"></p>
-    <button @click="signInWithRedirectFlow">Sign in with Redirect</button>
+    <button @click="() => signInWithRedirectFlow(true)">Sign in with Redirect</button>
   </div>
 </template>
 
@@ -13,7 +13,7 @@ import { getRedirectResultToken, signInWithRedirectFlow } from '../services/fire
 onMounted(async () => {
   const el = document.getElementById('resultToken')
   const payload = await getRedirectResultToken()
-  el.textContent = `resultToken: ${payload}`
+  el!.textContent = `resultToken: ${payload}`
 })
 </script>
 
