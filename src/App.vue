@@ -84,7 +84,8 @@
 
 .app-main > .privacy-page,
 .app-main > .terms-page,
-.app-main > .support-page {
+.app-main > .support-page,
+.app-main > .test-redirect-page {
   flex: 1;
   overflow: auto;
 }
