@@ -139,6 +139,8 @@ export function useGoogleDrive() {
     try {
       if (authMode === 'redirect') {
         await signInWithRedirectFlow(forceConsent)
+        // since it redirect to the sign-in page, we don't need to wait for anything.
+        // There is no chance to execute the code after this line.
       } else if (authMode === 'gsi' && tokenClient) {
         tokenClient.requestAccessToken(forceConsent ? { prompt: 'consent' } : undefined)
       } else {
