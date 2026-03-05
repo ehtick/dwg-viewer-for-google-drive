@@ -20,6 +20,14 @@
           <span>{{ fileLoadError }}</span>
         </div>
 
+        <div v-if="needsSignIn" class="sign-in-prompt">
+          <p class="sign-in-message">Sign in with Google to open this file.</p>
+          <el-button type="primary" size="large" :loading="isLoading" @click="authenticate(false)">
+            <el-icon><FolderOpened /></el-icon>
+            &nbsp;Sign in with Google
+          </el-button>
+        </div>
+
         <div class="viewer-container">
           <div class="sidebar">
             <div class="app-purpose-section">
@@ -68,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { Document, Loading, Warning } from '@element-plus/icons-vue'
+import { Document, FolderOpened, Loading, Warning } from '@element-plus/icons-vue'
 import { Model2dConfig, Viewer2d, Viewer2dConfig } from '@x-viewer/core'
 import {
   AxisGizmoPlugin,
@@ -125,13 +133,19 @@ const passedInFileId = computed(() => {
   return null
 })
 
-// Show step-wise loading: signing in -> downloading -> (x-viewer loads)
+// Show step-wise loading: downloading -> (x-viewer loads)
+// Note: sign-in must be user-initiated (popup), so we do not show a loading spinner for it.
 const loadingMessage = computed(() => {
   if (!passedInFileId.value) return ''
   if (fileUrl.value) return '' // file ready, x-viewer loads
-  if (!isAuthenticated.value || isLoading.value) return 'Signing in with Google…'
-  return 'Downloading file…'
+  if (isLoading.value) return 'Signing in with Google…'
+  if (isAuthenticated.value) return 'Downloading file…'
+  return '' // not authenticated – sign-in button shown instead
 })
+
+const needsSignIn = computed(() =>
+  !!passedInFileId.value && !isAuthenticated.value && !isLoading.value
+)
 
 const formatFileSize = (sizeStr: string) => {
   const bytes = parseInt(sizeStr, 10)
@@ -286,12 +300,10 @@ onMounted(async () => {
   await nextTick()
   await initViewer()
 
-  // Wait for auth restore (e.g. Firebase redirect result) before deciding to redirect to sign-in.
+  // Restore auth from localStorage (no user gesture needed).
+  // If still not authenticated, needsSignIn becomes true and the template shows a sign-in button.
+  // authenticate() must be called from a user click so the browser allows the popup to open.
   await tryRestoreAuth()
-  if (!isAuthenticated.value) {
-    await authenticate()
-  }
-  // We'll watch isAuthenticated, and call tryLoadFileFromDrive when it becomes true.
 })
 
 onUnmounted(() => {
@@ -410,6 +422,28 @@ onUnmounted(() => {
 .error-icon {
   color: #F56C6C;
   animation: none;
+}
+
+.sign-in-prompt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sign-in-message {
+  color: white;
+  font-size: 1rem;
+  margin: 0;
+  opacity: 0.9;
 }
 
 .viewer-container {
