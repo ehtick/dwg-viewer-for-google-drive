@@ -86,7 +86,7 @@ export function useGoogleDrive() {
           scope: SCOPES,
           callback: handleTokenResponse,
           redirect_uri: cleanOrigin,
-          ux_mode: 'redirect' // 'popup' || 'redirect'
+          ux_mode: 'popup' // 'popup' || 'redirect'
         })
       }
       gapiInited = true

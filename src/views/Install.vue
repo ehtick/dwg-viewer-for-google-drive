@@ -25,7 +25,7 @@
           rel="noopener noreferrer"
           class="btn btn-marketplace"
         >
-          Open in Google Workspace Marketplace →
+          Install from Google Workspace Marketplace →
         </a>
         <p class="marketplace-note">
           After installing from Marketplace, right‑click any DWG or DXF file in
