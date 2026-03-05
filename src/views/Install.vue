@@ -12,44 +12,67 @@
         Add <strong>DWG Viewer</strong> to your Google Drive™ so you can open DWG and DXF files directly from Drive.
       </p>
 
-      <section class="explanation">
-        <h2>What happens when you install</h2>
+      <!-- Recommended: Marketplace -->
+      <section class="marketplace-section">
+        <h2>Install from Google Workspace Marketplace <span class="badge-recommended">Recommended</span></h2>
         <p>
-          After you authorize the app, <strong>DWG Viewer</strong> will appear in the <strong>Open with</strong> menu
-          when you right‑click a DWG or DXF file (or use the “⋮” menu on the file) in Google Drive™. You can then
-          open drawings in the viewer with one click.
+          DWG Viewer is published on the Google Workspace Marketplace. Installing from there is the simplest and most
+          reliable way — your authorization is saved to your Google account and persists across sessions.
+        </p>
+        <a
+          href="https://workspace.google.com/marketplace/app/dwg_viewer/641533811831"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-marketplace"
+        >
+          Open in Google Workspace Marketplace →
+        </a>
+        <p class="marketplace-note">
+          After installing from Marketplace, right‑click any DWG or DXF file in
+          <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer">Google Drive™</a>
+          and choose <strong>Open with</strong> → <strong>DWG Viewer</strong>.
+        </p>
+      </section>
+
+      <div class="divider">
+        <span>or</span>
+      </div>
+
+      <!-- Alternative: manual auth -->
+      <section class="explanation">
+        <h2>Authorize directly (for testing / development)</h2>
+        <p>
+          If you cannot access the Marketplace, you can authorize the app manually below.
+          Note that this authorization is only stored in your current browser and will expire after about one hour.
         </p>
         <p>
-          The app will also show up in your
-          <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Account permissions</a>
-          page, where you can view or revoke access at any time.
+          After authorization, <strong>DWG Viewer</strong> will appear in the <strong>Open with</strong> menu in Google Drive™.
+          Your permissions can be viewed or revoked at any time from your
+          <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Account permissions</a> page.
         </p>
       </section>
 
       <section v-if="installed" class="status-section installed">
-        <h2>✓ Installed</h2>
+        <h2>✓ Authorized</h2>
         <p>
-          DWG Viewer is connected to your Google account. When you go to
+          DWG Viewer is connected to your Google account. Go to
           <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer">Google Drive™</a>,
-          right‑click any DWG or DXF file and choose <strong>Open with</strong> → <strong>DWG Viewer</strong> to open it here.
+          right‑click any DWG or DXF file and choose <strong>Open with</strong> → <strong>DWG Viewer</strong>.
         </p>
         <p class="refresh-tip">
-          <strong>Tip:</strong> If you already have Drive open in another tab, refresh that page so that <strong>DWG Viewer</strong> appears in the <strong>Open with</strong> menu.
+          <strong>Tip:</strong> If Drive is already open in another tab, refresh it so DWG Viewer appears in the <strong>Open with</strong> menu.
         </p>
         <router-link to="/home" class="btn btn-secondary">Go to Home</router-link>
       </section>
 
       <section v-else class="action-section">
-        <p class="action-intro">
-          Click the button below to authorize the app with your Google account. A sign-in window will open; after you sign in and grant access, the app will be installed.
-        </p>
         <button
           type="button"
-          class="btn btn-primary"
+          class="btn btn-manual"
           :disabled="loading"
           @click="startInstall"
         >
-          {{ loading ? 'Opening sign-in…' : 'Install' }}
+          {{ loading ? 'Opening sign-in…' : 'Authorize manually' }}
         </button>
         <p v-if="error" class="error-msg">{{ error }}</p>
       </section>
@@ -92,11 +115,9 @@ async function startInstall() {
   }, 120000)
   try {
     await authenticate(true)
-    // GSI: popup opens; when user completes, handleTokenResponse sets isAuthenticated.
-    // Watch above will set installed and clear loading; clear timeout there too.
   } catch (e) {
     console.error('Install: auth failed', e)
-    error.value = 'Install could not start. Check that the app is configured (e.g. VITE_GOOGLE_CLIENT_ID).'
+    error.value = 'Authorization could not start. Check that the app is configured (e.g. VITE_GOOGLE_CLIENT_ID).'
     loading.value = false
     if (loadingTimeout) {
       window.clearTimeout(loadingTimeout)
@@ -175,7 +196,7 @@ onMounted(async () => {
 }
 
 section {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 section:last-child {
@@ -189,13 +210,86 @@ h2 {
   font-weight: 600;
   border-bottom: 2px solid #667eea;
   padding-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.explanation p,
-.action-intro {
+/* Marketplace section */
+.marketplace-section {
+  background: #f5f7ff;
+  border: 1.5px solid #667eea;
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin-bottom: 0;
+}
+
+.marketplace-section h2 {
+  border-bottom-color: #667eea;
+}
+
+.badge-recommended {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: #667eea;
+  color: white;
+  border-radius: 20px;
+  padding: 3px 10px;
+  vertical-align: middle;
+}
+
+.marketplace-section p {
   margin: 0 0 16px 0;
   line-height: 1.6;
   color: #555;
+}
+
+.marketplace-note {
+  margin-top: 14px !important;
+  font-size: 0.92rem;
+  color: #666 !important;
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 28px 0;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.divider span {
+  padding: 0 14px;
+}
+
+/* Explanation section (muted) */
+.explanation {
+  opacity: 0.85;
+}
+
+.explanation h2 {
+  border-bottom-color: #ccc;
+  color: #666;
+  font-size: 1.05rem;
+}
+
+.explanation p {
+  margin: 0 0 14px 0;
+  line-height: 1.6;
+  color: #777;
+  font-size: 0.95rem;
 }
 
 .status-section.installed h2 {
@@ -218,6 +312,7 @@ h2 {
   align-items: flex-start;
 }
 
+/* Buttons */
 .btn {
   display: inline-block;
   padding: 12px 24px;
@@ -230,23 +325,41 @@ h2 {
   transition: background-color 0.2s, opacity 0.2s;
 }
 
-.btn-primary {
+.btn-marketplace {
   background: #667eea;
+  color: white;
+  font-size: 1rem;
+}
+
+.btn-marketplace:hover {
+  background: #5a6fd6;
+  text-decoration: none;
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: #5a6fd6;
+.btn-manual {
+  background: transparent;
+  color: #888;
+  border: 1.5px solid #ccc;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 9px 18px;
 }
 
-.btn-primary:disabled {
-  opacity: 0.7;
+.btn-manual:hover:not(:disabled) {
+  border-color: #aaa;
+  color: #555;
+}
+
+.btn-manual:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .btn-secondary {
   background: #f0f0f0;
   color: #333;
+  margin-top: 16px;
 }
 
 .btn-secondary:hover {
@@ -288,7 +401,7 @@ a:hover {
   }
 
   h2 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
   }
 }
 </style>

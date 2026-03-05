@@ -80,10 +80,13 @@ export function useGoogleDrive() {
       if (authMode === 'redirect') {
         // Firebase redirect: no GSI token client; auth via signInWithRedirect / getRedirectResult
       } else if (CLIENT_ID && typeof google !== 'undefined') {
+        const cleanOrigin = window.location.origin + window.location.pathname.replace(/\/+$/, '') + '/'
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
-          callback: handleTokenResponse
+          callback: handleTokenResponse,
+          redirect_uri: cleanOrigin,
+          ux_mode: 'redirect' // 'popup' || 'redirect'
         })
       }
       gapiInited = true
