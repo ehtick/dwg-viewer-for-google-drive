@@ -168,41 +168,6 @@ export function useGoogleDrive() {
     isAuthenticated.value = false
   }
 
-  // Handle Google Drive App integration
-  const handleDriveAppAction = async (fileId: string) => {
-    try {
-      // Ensure APIs are initialized first
-      await initializeGoogleAPIs()
-
-      // Authenticate if needed, and wait until user has actually completed login
-      if (!isAuthenticated.value) {
-        await authenticate()
-        // Wait for user to complete sign-in (token callback sets isAuthenticated)
-        let retries = 0
-        const maxWait = 120 // ~2 minutes
-        while (!isAuthenticated.value && retries < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          retries++
-        }
-        if (!isAuthenticated.value) {
-          console.warn('Authentication not completed, skipping file load')
-          return
-        }
-      }
-
-      // Get file details after authentication
-      const fileDetails = await getFileDetails(fileId)
-      if (fileDetails) {
-        currentFile.value = fileDetails
-      } else {
-        // If file details cannot be fetched, create a minimal file object from URL params
-        currentFile.value = { id: fileId } as DriveFile
-      }
-    } catch (error) {
-      console.error('Error handling Drive App action:', error)
-    }
-  }
-
   const getFileDetails = async (fileId: string): Promise<DriveFile | null> => {
     try {
       const response = await gapi.client.drive.files.get({
@@ -427,29 +392,6 @@ export function useGoogleDrive() {
   }
 
   onMounted(async () => {
-    // await tryRestoreAuth();
-
-    // // Check if we're being opened as a Drive App
-    // const urlParams = new URLSearchParams(window.location.search)
-    // const action = urlParams.get('action')
-    // const fileId = urlParams.get('fileId')
-    // const fileName = urlParams.get('fileName')
-    // const mimeType = urlParams.get('mimeType')
-
-    // if (action && fileId && fileName && mimeType) {
-    //   handleDriveAppAction({
-    //     fileId,
-    //     fileName,
-    //     mimeType
-    //   })
-    // }
-
-    // // Listen for Drive App messages
-    // window.addEventListener('message', (event) => {
-    //   if (event.origin === 'https://drive.google.com' && event.data.type === 'drive-app-action') {
-    //     handleDriveAppAction(event.data.action)
-    //   }
-    // })
   })
 
   return {
@@ -460,8 +402,6 @@ export function useGoogleDrive() {
     authenticate,
     signOut,
     getFileContent,
-    // getFileDownloadUrl,
-    // getFileDetails,
-    handleDriveAppAction
+    getFileDetails,
   }
 }

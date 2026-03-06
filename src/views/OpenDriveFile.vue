@@ -94,8 +94,8 @@ const {
   tryRestoreAuth,
   currentFile,
   getFileContent,
+  getFileDetails,
   authenticate,
-  handleDriveAppAction
 } = useGoogleDrive()
 
 const fileUrl = ref<string>('')
@@ -272,7 +272,8 @@ watch(isAuthenticated, async (authenticated) => {
     fileLoadError.value = 'No file ID available.'
     return
   }
-  await handleDriveAppAction(fileId.value)
+  const details = await getFileDetails(fileId.value)
+  currentFile.value = details ?? { id: fileId.value, name: '', size: '', lastEditedUtc: '', mimeType: '', url: '' }
 }, { immediate: true })
 
 onMounted(async () => {
@@ -284,7 +285,10 @@ onMounted(async () => {
   }
   fileId.value = resolvedId
 
-  // Normalise URL to ?fileId=xxx so the page is bookmarkable and refresh-safe.
+  // Normalise URL to ?fileId=xxx so the page is bookmarkable and refresh-safe. 
+  // E.g., below url will be normalized to the latter one.
+  // http://localhost:5173/?state={%22ids%22:[%2211YGgbQBr6vkuBh3NEVbyYSA4xkcIvdgU%22],%22action%22:%22open%22,%22userId%22:%22100191952719869236324%22,%22resourceKeys%22:{}}&iss=https://accounts.google.com&code=4/0AfrIepAS1pk_9GGajJJgFUDTOZQh3nCN7tHSsDKs2VwKcgofK1p3iOF0TtOnKLlvPZv5TQ&scope=https://www.googleapis.com/auth/drive.file
+  // http://localhost:5173/?fileId=11YGgbQBr6vkuBh3NEVbyYSA4xkcIvdgU
   // history.replaceState does not trigger Vue Router, so route.query is unaffected.
   window.history.replaceState(null, '', `${window.location.pathname}?fileId=${encodeURIComponent(resolvedId)}`)
 
