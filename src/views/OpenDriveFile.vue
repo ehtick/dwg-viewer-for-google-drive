@@ -32,7 +32,7 @@
               </p>
             </div>
 
-            <div v-if="currentFile || passedInFileId" class="file-info-wrapper">
+            <div v-if="currentFile || fileId" class="file-info-wrapper">
               <el-card class="file-info-card">
                 <template #header>
                   <div class="card-header">
@@ -41,7 +41,7 @@
                   </div>
                 </template>
                 <div class="file-info-content">
-                  <div v-if="currentFile?.name" class="file-info-row" :title="currentFile?.id || passedInFileId || undefined">
+                  <div v-if="currentFile?.name" class="file-info-row" :title="currentFile?.id || fileId || undefined">
                     <span class="file-info-label">name</span><span class="file-info-value">{{ currentFile.name }}</span>
                   </div>
                   <div v-if="currentFile?.size" class="file-info-row"><span class="file-info-label">size</span><span class="file-info-value">{{ formatFileSize(currentFile.size) }}</span></div>
@@ -104,31 +104,32 @@ const viewer = ref<Viewer2d | null>(null)
 const layerManagerPlugin = ref<LayerManagerPlugin | null>(null)
 const fileLoadError = ref<string>('')
 
-// Parse fileId from route.query.state (format: {"ids":["xxx"]})
-const passedInFileId = computed(() => {
+// Resolved once in onMounted from ?fileId=xxx or Google Drive's ?state={"ids":["xxx"]}
+const fileId = ref<string | null>(null)
+
+function parseFileIdFromQuery(): string | null {
+  // Simple param written by us on previous visit
+  const simple = route.query.fileId
+  if (simple && typeof simple === 'string') return simple
+
+  // Google Drive "Open with" format: state={"ids":["xxx"],...}
   const stateParam = route.query.state
-  if (!stateParam || typeof stateParam !== 'string') {
-    return null
-  }
+  if (!stateParam || typeof stateParam !== 'string') return null
   try {
-    const decoded = decodeURIComponent(stateParam)
-    const state = JSON.parse(decoded)
+    const state = JSON.parse(decodeURIComponent(stateParam))
     if (state?.ids?.[0]) return state.ids[0]
   } catch {
     try {
       const state = JSON.parse(stateParam)
       if (state?.ids?.[0]) return state.ids[0]
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
   return null
-})
+}
 
-// Show step-wise loading: signing in -> downloading -> (x-viewer loads)
 const loadingMessage = computed(() => {
-  if (!passedInFileId.value) return ''
-  if (fileUrl.value) return '' // file ready, x-viewer loads
+  if (!fileId.value) return ''
+  if (fileUrl.value) return ''
   if (!isAuthenticated.value || isLoading.value) return 'Signing in with Google…'
   return 'Downloading file…'
 })
@@ -266,32 +267,37 @@ watch(currentFile, async (file) => {
 }, { immediate: true })
 
 watch(isAuthenticated, async (authenticated) => {
-  if (!authenticated) {
+  if (!authenticated) return
+  if (!fileId.value) {
+    fileLoadError.value = 'No file ID available.'
     return
   }
-  const fileId = passedInFileId.value
-  if (!fileId) {
-    fileLoadError.value = 'Missing or invalid state parameter from Google Drive. Expected format: {"ids":["xxx"]}'
-    return
-  }
-  await handleDriveAppAction(fileId)
+  await handleDriveAppAction(fileId.value)
 }, { immediate: true })
 
 onMounted(async () => {
-  if (!passedInFileId.value) {
+  // Resolve fileId once from URL (?fileId=xxx or ?state={"ids":["xxx"]}).
+  const resolvedId = parseFileIdFromQuery()
+  if (!resolvedId) {
     fileLoadError.value = 'No valid file ID provided. Open a file from Google Drive via "Open with" to view it here.'
     return
   }
+  fileId.value = resolvedId
+
+  // Normalise URL to ?fileId=xxx so the page is bookmarkable and refresh-safe.
+  // history.replaceState does not trigger Vue Router, so route.query is unaffected.
+  window.history.replaceState(null, '', `${window.location.pathname}?fileId=${encodeURIComponent(resolvedId)}`)
 
   await nextTick()
   await initViewer()
 
-  // Wait for auth restore (e.g. Firebase redirect result) before deciding to redirect to sign-in.
+  // Try to restore token from localStorage first; call authenticate() only if needed.
+  // The URL is already normalised to ?fileId=xxx at this point, so if GSI falls back to
+  // redirect, the redirect_uri it sends to Google contains no reserved params.
   await tryRestoreAuth()
   if (!isAuthenticated.value) {
     await authenticate()
   }
-  // We'll watch isAuthenticated, and call tryLoadFileFromDrive when it becomes true.
 })
 
 onUnmounted(() => {
@@ -411,6 +417,7 @@ onUnmounted(() => {
   color: #F56C6C;
   animation: none;
 }
+
 
 .viewer-container {
   flex: 1;

@@ -40,9 +40,6 @@ const currentFile = ref<DriveFile | null>(null)
 const authMode: 'redirect' | 'gsi' = 'gsi'
 let tokenClient: any = null // used for GSI mode
 let gapiInited = false
-// Saved before stripping query params; restored in handleTokenResponse so the app
-// can still read route.query.state after authentication completes.
-let savedUrlBeforeAuth: string | null = null
 
 
 export function useGoogleDrive() {
@@ -100,12 +97,6 @@ export function useGoogleDrive() {
    * Handle token response for GSI mode.
    */
   const handleTokenResponse = (response: any) => {
-    // Restore the URL that was stripped before calling requestAccessToken.
-    if (savedUrlBeforeAuth) {
-      window.history.replaceState(null, '', savedUrlBeforeAuth)
-      savedUrlBeforeAuth = null
-    }
-
     if (response.error) {
       console.error('Authentication error:', response.error)
       localStorage.removeItem('google_drive_token')
@@ -149,13 +140,6 @@ export function useGoogleDrive() {
         // since it redirect to the sign-in page, we don't need to wait for anything.
         // There is no chance to execute the code after this line.
       } else if (authMode === 'gsi' && tokenClient) {
-        // GSI uses window.location as fallback redirect_uri when a popup is blocked.
-        // Google rejects any redirect_uri containing reserved params like 'state'.
-        // Strip all query params now and restore them in handleTokenResponse.
-        if (window.location.search) {
-          savedUrlBeforeAuth = window.location.href
-          window.history.replaceState(null, '', window.location.origin + window.location.pathname)
-        }
         tokenClient.requestAccessToken(forceConsent ? { prompt: 'consent' } : undefined)
       } else {
         console.error('No auth method configured. Set Firebase env or VITE_GOOGLE_CLIENT_ID.')
