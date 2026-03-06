@@ -35,21 +35,20 @@
 
 <script setup lang="ts">
 import { Loading } from '@element-plus/icons-vue'
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 import GoogleDriveAuth from '../components/GoogleDriveAuth.vue'
 // import GoogleDriveFilePicker from '../components/GoogleDriveFilePicker.vue'
 import { useGoogleDrive } from '../composables/useGoogleDrive'
 
 
-const {
-  isLoading,
-  tryRestoreAuth,
-} = useGoogleDrive()
-
+const { tryRestoreAuth } = useGoogleDrive()
+const isLoading = ref(false)
 
 onMounted(async () => {
+  isLoading.value = true
   await tryRestoreAuth()
+  isLoading.value = false
 })
 
 onUnmounted(() => {

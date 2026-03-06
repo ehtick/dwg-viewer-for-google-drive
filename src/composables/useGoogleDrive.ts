@@ -27,7 +27,6 @@ interface DriveFile {
 
 // Shared state so all components (App.vue, GoogleDriveAuth, GoogleDriveFilePicker) see the same isAuthenticated
 const isAuthenticated = ref(false)
-const isLoading = ref(false)
 const currentFile = ref<DriveFile | null>(null)
 // const userInfo = reactive<UserInfo>({
 //   name: '',
@@ -132,7 +131,6 @@ export function useGoogleDrive() {
       console.error('Google API credentials not configured')
       return
     }
-    isLoading.value = true
     await initializeGoogleAPIs()
     try {
       if (authMode === 'redirect') {
@@ -147,7 +145,6 @@ export function useGoogleDrive() {
     } catch (error) {
       console.error('Authentication failed:', error)
     }
-    isLoading.value = false
   }
 
   const signOut = async () => {
@@ -396,7 +393,6 @@ export function useGoogleDrive() {
 
   return {
     isAuthenticated,
-    isLoading,
     tryRestoreAuth,
     currentFile,
     authenticate,

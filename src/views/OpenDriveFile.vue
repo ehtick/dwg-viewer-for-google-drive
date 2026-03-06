@@ -15,6 +15,13 @@
           <span>{{ loadingMessage }}</span>
         </div>
 
+        <div v-if="!isAuthenticated" class="sign-in-prompt">
+          <p class="sign-in-message">You need to be signed in to access this file.</p>
+          <el-button type="primary" size="large" :loading="isLoading" :disabled="isRestoringAuth" @click="handleSignIn">
+            Sign in with Google
+          </el-button>
+        </div>
+
         <div v-if="fileLoadError" class="error-indicator">
           <el-icon class="error-icon" size="24"><Warning /></el-icon>
           <span>{{ fileLoadError }}</span>
@@ -90,7 +97,6 @@ const route = useRoute()
 
 const {
   isAuthenticated,
-  isLoading,
   tryRestoreAuth,
   currentFile,
   getFileContent,
@@ -99,6 +105,8 @@ const {
 } = useGoogleDrive()
 
 const fileUrl = ref<string>('')
+const isLoading = ref(false)
+const isRestoringAuth = ref(true) // it will try to restore auth in onMounted() and update to false when done
 const viewerContainer = ref<HTMLElement | null>(null)
 const viewer = ref<Viewer2d | null>(null)
 const layerManagerPlugin = ref<LayerManagerPlugin | null>(null)
@@ -107,14 +115,20 @@ const fileLoadError = ref<string>('')
 // Resolved once in onMounted from ?fileId=xxx or Google Drive's ?state={"ids":["xxx"]}
 const fileId = ref<string | null>(null)
 
-function parseFileIdFromQuery(): string | null {
+async function handleSignIn() {
+  isLoading.value = true
+  await authenticate(false)
+  isLoading.value = false
+}
+
+function parseFileIdFromQuery(): string {
   // Simple param written by us on previous visit
   const simple = route.query.fileId
   if (simple && typeof simple === 'string') return simple
 
   // Google Drive "Open with" format: state={"ids":["xxx"],...}
   const stateParam = route.query.state
-  if (!stateParam || typeof stateParam !== 'string') return null
+  if (!stateParam || typeof stateParam !== 'string') return ''
   try {
     const state = JSON.parse(decodeURIComponent(stateParam))
     if (state?.ids?.[0]) return state.ids[0]
@@ -124,14 +138,15 @@ function parseFileIdFromQuery(): string | null {
       if (state?.ids?.[0]) return state.ids[0]
     } catch { /* ignore */ }
   }
-  return null
+  return ''
 }
 
 const loadingMessage = computed(() => {
   if (!fileId.value) return ''
   if (fileUrl.value) return ''
-  if (!isAuthenticated.value || isLoading.value) return 'Signing in with Google…'
-  return 'Downloading file…'
+  if (isLoading.value) return 'Signing in with Google…'
+  if (isAuthenticated.value) return 'Downloading file…'
+  return ''
 })
 
 const formatFileSize = (sizeStr: string) => {
@@ -269,38 +284,45 @@ watch(currentFile, async (file) => {
 watch(isAuthenticated, async (authenticated) => {
   if (!authenticated) return
   if (!fileId.value) {
-    fileLoadError.value = 'No file ID available.'
-    return
+    const resolvedId = parseFileIdFromQuery()
+    if (!resolvedId) {
+      fileLoadError.value = 'No valid file ID provided. Open a file from Google Drive via "Open with" to view it here.'
+      return
+    }
+    fileId.value = resolvedId
   }
   const details = await getFileDetails(fileId.value)
   currentFile.value = details ?? { id: fileId.value, name: '', size: '', lastEditedUtc: '', mimeType: '', url: '' }
 }, { immediate: true })
 
 onMounted(async () => {
-  // Resolve fileId once from URL (?fileId=xxx or ?state={"ids":["xxx"]}).
-  const resolvedId = parseFileIdFromQuery()
-  if (!resolvedId) {
-    fileLoadError.value = 'No valid file ID provided. Open a file from Google Drive via "Open with" to view it here.'
-    return
-  }
-  fileId.value = resolvedId
+  // isRestoringAuth.value = true
+  try {
+    // Resolve fileId once from URL (?fileId=xxx or ?state={"ids":["xxx"]}).
+    const resolvedId = parseFileIdFromQuery()
+    if (!resolvedId) {
+      fileLoadError.value = 'No valid file ID provided. Open a file from Google Drive via "Open with" to view it here.'
+    }
+    fileId.value = resolvedId
 
-  // Normalise URL to ?fileId=xxx so the page is bookmarkable and refresh-safe. 
-  // E.g., below url will be normalized to the latter one.
-  // http://localhost:5173/?state={%22ids%22:[%2211YGgbQBr6vkuBh3NEVbyYSA4xkcIvdgU%22],%22action%22:%22open%22,%22userId%22:%22100191952719869236324%22,%22resourceKeys%22:{}}&iss=https://accounts.google.com&code=4/0AfrIepAS1pk_9GGajJJgFUDTOZQh3nCN7tHSsDKs2VwKcgofK1p3iOF0TtOnKLlvPZv5TQ&scope=https://www.googleapis.com/auth/drive.file
-  // http://localhost:5173/?fileId=11YGgbQBr6vkuBh3NEVbyYSA4xkcIvdgU
-  // history.replaceState does not trigger Vue Router, so route.query is unaffected.
-  window.history.replaceState(null, '', `${window.location.pathname}?fileId=${encodeURIComponent(resolvedId)}`)
+    // Normalise URL to ?fileId=xxx so the page is bookmarkable and refresh-safe. 
+    // E.g., below url will be normalized to the latter one.
+    // http://localhost:5173/?state={%22ids%22:[%2211YGgbQBr6vkuBh3NEVbyYSA4xkcIvdgU%22],%22action%22:%22open%22,%22userId%22:%22100191952719869236324%22,%22resourceKeys%22:{}}&iss=https://accounts.google.com&code=4/0AfrIepAS1pk_9GGajJJgFUDTOZQh3nCN7tHSsDKs2VwKcgofK1p3iOF0TtOnKLlvPZv5TQ&scope=https://www.googleapis.com/auth/drive.file
+    // http://localhost:5173/?fileId=11YGgbQBr6vkuBh3NEVbyYSA4xkcIvdgU
+    // history.replaceState does not trigger Vue Router, so route.query is unaffected.
+    window.history.replaceState(null, '', `${window.location.pathname}?fileId=${encodeURIComponent(resolvedId)}`)
 
-  await nextTick()
-  await initViewer()
+    await nextTick()
+    await initViewer()
 
-  // Try to restore token from localStorage first; call authenticate() only if needed.
-  // The URL is already normalised to ?fileId=xxx at this point, so if GSI falls back to
-  // redirect, the redirect_uri it sends to Google contains no reserved params.
-  await tryRestoreAuth()
-  if (!isAuthenticated.value) {
-    await authenticate()
+    // Restore token from localStorage. If still not authenticated after this,
+    // needsSignIn becomes true and the template shows the sign-in button.
+    // authenticate() must be called from a user click so the browser allows the popup.
+    await tryRestoreAuth()
+  } catch (error) {
+    console.error('Error restoring auth:', error)
+  } finally {
+    isRestoringAuth.value = false
   }
 })
 
@@ -420,6 +442,28 @@ onUnmounted(() => {
 .error-icon {
   color: #F56C6C;
   animation: none;
+}
+
+.sign-in-prompt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: rgba(255, 255, 255, 1);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 100;
+}
+
+.sign-in-message {
+  color: rgb(107 114 128);
+  font-size: 1rem;
+  margin: 0;
+  opacity: 0.9;
 }
 
 

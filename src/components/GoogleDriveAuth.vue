@@ -20,7 +20,7 @@
           <el-button
             type="primary"
             size="large"
-            @click="() => authenticate(forceConsent)"
+            @click="handleConnect"
             :loading="isLoading"
             class="auth-button"
           >
@@ -58,13 +58,19 @@ import { useGoogleDrive } from '../composables/useGoogleDrive'
 const route = useRoute()
 const isHomePage = computed(() => route.name === 'Home')
 const forceConsent = ref(true)
+const isLoading = ref(false)
 
 const {
   isAuthenticated,
-  isLoading,
   authenticate,
   signOut
 } = useGoogleDrive()
+
+async function handleConnect() {
+  isLoading.value = true
+  await authenticate(forceConsent.value)
+  isLoading.value = false
+}
 </script>
 
 <style scoped>
