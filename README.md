@@ -1,17 +1,9 @@
-# DWG Viewer for Google Drive™
+# CAD Viewer for Google Drive™
 
-**DWG Viewer** is a free, browser-based CAD file viewer that integrates directly with Google Drive™. Open, view, and annotate AutoCAD DWG and DXF files in your browser — no software installation required.
+**CAD Viewer** is a free web application that lets you open and view **2D CAD drawings** (DWG, DXF) and **3D models** (glTF, GLB, OBJ, FBX, STL) directly from **Google Drive™** in the browser — no software installation required.
 
-🔗 **Website**: [drive.thingraph.site](https://drive.thingraph.site)
-📦 **Install**: [Google Workspace Marketplace](https://workspace.google.com/marketplace/app/dwg_viewer/641533811831)
-
----
-
-## What Is DWG Viewer?
-
-DWG Viewer for Google Drive™ is a Google Workspace add-on that lets you open AutoCAD `.dwg` and `.dxf` files directly from Google Drive™ in your browser. It is powered by **x-viewer** — a high-performance WebGL-based CAD rendering engine — delivering fast, accurate 2D CAD rendering without requiring AutoCAD or any desktop software.
-
-To use it: right-click any DWG or DXF file in Google Drive™ and choose **Open with → DWG Viewer**.
+Live app: [https://cad.thingraph.site/](https://cad.thingraph.site/)
+Install from Google Workspace Marketplace: [CAD Viewer – Google Workspace Marketplace](https://workspace.google.com/marketplace/app/dwg_viewer/641533811831)
 
 ---
 
@@ -19,81 +11,126 @@ To use it: right-click any DWG or DXF file in Google Drive™ and choose **Open 
 
 | Format | Description |
 |--------|-------------|
-| `.dwg` | AutoCAD Drawing — the industry-standard binary CAD format |
-| `.dxf` | Drawing Exchange Format — an open CAD interchange format by Autodesk |
+| **DWG** | AutoCAD Drawing — the most widely used 2D CAD format |
+| **DXF** | Drawing Exchange Format — open CAD interchange format |
+| **glTF** | GL Transmission Format (JSON + external .bin / textures) |
+| **GLB** | Binary glTF — single-file, self-contained 3D model |
+| **OBJ** | Wavefront Object — widely supported 3D mesh format |
+| **FBX** | Autodesk Filmbox — common in animation and game pipelines |
+| **STL** | Stereolithography — used in 3D printing and CAD |
 
 ---
 
 ## Features
 
-- **2D CAD Viewer** — High-performance WebGL rendering via x-viewer engine; renders complex drawings with thousands of entities smoothly
-- **Measurement Tools** — Measure distance, area, angle, and coordinates directly on the drawing
-- **Markup & Annotation** — Add arrows, rectangles, circles, text, and freehand markup
-- **Layer Management** — Toggle layer visibility, inspect layer properties
-- **Layout Switching** — Navigate between model space and paper space layouts in multi-layout DWG files
-- **Screenshot Export** — Capture and download high-quality PNG images of the current view
-- **Navigation Controls** — Zoom, pan, fit-to-window, and axis gizmo
-- **Settings Panel** — Customize background color, line weight, and display preferences
-- **Google Drive Integration** — Opens files directly from Google Drive™ with OAuth 2.0 authentication; no file upload needed
+- **High-performance 2D WebGL rendering** — DWG/DXF files are parsed and rendered entirely in the browser using WebGL (Three.js), no server-side conversion needed
+- **Full 3D model viewer** — glTF, GLB, OBJ, FBX, STL with orbit, pan, zoom
+- **Layer management** — show/hide DWG/DXF layers, manage layer visibility
+- **Layout switching** — switch between model space and paper space layouts in multi-layout DWG/DXF files
+- **Measurement tools** — distance, area, angle, coordinate measurements with object snapping (osnap)
+- **Markup & annotation** — arrows, rectangles, circles, text annotations with undo/redo
+- **Screenshot** — export high-quality PNG images of the current view
+- **Section plane** — clip 3D models with interactive section planes
+- **Tree view** — browse and select model hierarchy
+- **Skybox & ground shadow** — realistic environment for 3D models
+- **Settings panel** — customize background, rendering quality, and more
+- **Google Drive™ integration** — open files via "Open with" directly from Google Drive™ without downloading
 
 ---
 
-## How to Install
+## Powered by x-viewer SDK
 
-1. Go to [DWG Viewer on Google Workspace Marketplace](https://workspace.google.com/marketplace/app/dwg_viewer/641533811831)
-2. Click **Install**
-3. Grant the required Google Drive permissions
-4. Open any `.dwg` or `.dxf` file in Google Drive™, right-click it, and select **Open with → DWG Viewer**
+CAD Viewer is built on top of the **`@x-viewer/core`** and **`@x-viewer/plugins`** JavaScript SDK — a high-performance WebGL-based 2D and 3D viewer engine for the web.
+
+The 2D DWG/DXF viewer stack is powered by **[cad-viewer](https://github.com/mlightcad/cad-viewer)** (mlightcad), an open-source browser-based DXF/DWG viewer and editor.
+
+
+### About @x-viewer/core
+
+`@x-viewer/core` is a TypeScript/JavaScript SDK for building CAD and 3D model viewer applications in the browser. It provides:
+
+- **`Viewer2d`** — a WebGL-based 2D viewer for DWG and DXF files, built on Three.js
+- **`Viewer3d`** — a WebGL-based 3D viewer for glTF, GLB, OBJ, FBX, STL, built on Three.js
+
+Key capabilities of the SDK:
+
+- Parse and render DWG/DXF entirely client-side (no backend/server required)
+- Support for AutoCAD entity types: LINE, ARC, CIRCLE, POLYLINE, LWPOLYLINE, SPLINE, HATCH, TEXT, MTEXT, INSERT, DIMENSION, LEADER, MLEADER, ELLIPSE, SOLID, and more
+- Layer control, layout switching, osnap, distance/area/angle measurements
+- Markups, hotpoints, comparison mode, undo/redo
+- Full TypeScript support with comprehensive type definitions
+- Modular plugin architecture via `@x-viewer/plugins`
+
+### Install @x-viewer/core
+
+```bash
+npm install @x-viewer/core @x-viewer/plugins
+# or
+pnpm add @x-viewer/core @x-viewer/plugins
+```
+
+### Quick Start — Viewer2d (DWG/DXF)
+
+```typescript
+import { Viewer2d } from '@x-viewer/core'
+
+const viewer = new Viewer2d({ containerId: 'myCanvas' })
+await viewer.setFont(['hztxt.shx', 'simplex.shx'])
+await viewer.loadModel({ modelId: 'drawing', src: 'path/to/file.dwg' })
+viewer.goToHomeView()
+```
+
+### Quick Start — Viewer3d (glTF/GLB/OBJ/FBX/STL)
+
+```typescript
+import { Viewer3d } from '@x-viewer/core'
+
+const viewer = new Viewer3d({ containerId: 'myCanvas' })
+await viewer.loadModel({ modelId: 'model', src: 'path/to/model.glb' })
+```
+
+### Related Packages
+
+| Package | Description |
+|---------|-------------|
+| `@x-viewer/core` | Core viewer engine — `Viewer2d` and `Viewer3d` |
+| `@x-viewer/plugins` | Plugin modules: toolbar, measurements, markups, tree view, skybox, section, screenshots, etc. |
+
+### Examples & Demos
+
+- SDK examples repository: [github.com/thingraph/dwg-viewer-example](https://github.com/thingraph/dwg-viewer-example)
+- Live SDK demos: [dwg.thingraph.site](https://dwg.thingraph.site/)
 
 ---
 
-## About x-viewer
+## How to Use CAD Viewer with Google Drive™
 
-**x-viewer** is the CAD rendering engine that powers DWG Viewer. It is a WebGL-based JavaScript library designed for high-fidelity 2D CAD visualization in the browser. x-viewer supports:
+1. Install **CAD Viewer** from the [Google Workspace Marketplace](https://workspace.google.com/marketplace/app/dwg_viewer/641533811831)
+2. Open [Google Drive™](https://drive.google.com) in your browser
+3. Right-click a DWG, DXF, glTF, GLB, OBJ, FBX, or STL file
+4. Choose **Open with → CAD Viewer**
+5. Sign in with Google if prompted — the app only accesses the specific file you open
+6. Use the toolbar to zoom, pan, measure, annotate, or export screenshots
 
-- Accurate rendering of AutoCAD DWG/DXF entities (lines, arcs, splines, hatches, text, blocks, dimensions, etc.)
-- Layer-based visibility control
-- Multi-layout DWG file support
-- Extensible plugin architecture (`@x-viewer/core`, `@x-viewer/plugins`, `@x-viewer/ui`)
-- Integration with modern web frameworks (Vue, React, vanilla JS)
-
-x-viewer is developed by [Thingraph](https://thingraph.site) and published on npm under the `@x-viewer` scope.
-
----
-
-## Frequently Asked Questions
-
-**Can I view DWG files online for free?**
-Yes. DWG Viewer for Google Drive™ is free to install and use. Simply install it from the Google Workspace Marketplace and open any DWG file stored in your Google Drive™.
-
-**Do I need AutoCAD to open DWG files?**
-No. DWG Viewer renders DWG and DXF files entirely in the browser using the x-viewer WebGL engine. AutoCAD or any other desktop CAD software is not required.
-
-**What DWG versions are supported?**
-DWG Viewer supports DWG files from AutoCAD R14 through the latest AutoCAD 2025 format, as well as DXF files.
-
-**Is my data private?**
-Files are read directly from your Google Drive™ via the official Google Drive API. Files are not uploaded to any third-party server.
-
-**Can I annotate or markup a DWG file?**
-Yes. DWG Viewer includes markup tools for adding arrows, shapes, text annotations, and other overlays on top of the drawing.
+You can also open local files directly at [cad.thingraph.site/open](https://cad.thingraph.site/open) without connecting Google Drive™.
 
 ---
 
-## Tech Stack
+## Privacy & Data
 
-- **Rendering Engine**: x-viewer (`@x-viewer/core`, `@x-viewer/plugins`, `@x-viewer/ui`) — WebGL-based CAD renderer
-- **Frontend Framework**: Vue 3 + Vite
-- **UI Components**: Element Plus
-- **Authentication**: Google OAuth 2.0 + Firebase
-- **Deployment**: Hosted at [drive.thingraph.site](https://drive.thingraph.site)
-
----
-
-## Related Keywords
-
-AutoCAD DWG viewer online · DXF file viewer browser · open DWG without AutoCAD · Google Drive CAD viewer · free DWG viewer web · x-viewer WebGL · CAD file viewer Chrome · DWG viewer Google Workspace · view AutoCAD files online · DWG viewer no download
+- The app requests only `drive.file` and `drive.install` OAuth scopes
+- `drive.file` — read access to files you explicitly open via "Open with"
+- `drive.install` — allows the app to appear in the Google Drive™ "Open with" menu
+- File content is processed entirely in your browser — no files are uploaded to our servers
+- We do not store, index, or share your files or file metadata
 
 ---
 
-*Google Drive™ and Google Workspace™ are trademarks of Google LLC. AutoCAD® and DWG™ are trademarks of Autodesk, Inc. DWG Viewer is not affiliated with or endorsed by Google or Autodesk.*
+## Contact
+
+- Email: thingraph@outlook.com
+- GitHub: [github.com/thingraph/dwg-viewer-example](https://github.com/thingraph/dwg-viewer-example)
+
+---
+
+*Google Drive™ is a trademark of Google LLC. CAD Viewer is not affiliated with or endorsed by Google LLC*
